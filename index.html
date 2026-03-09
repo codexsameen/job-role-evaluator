@@ -490,6 +490,351 @@
     color: var(--danger);
   }
 
+  .save-btn {
+    margin-top: 24px;
+    margin-left: 10px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .save-btn:hover {
+    background: var(--accent);
+    color: #0e0e0e;
+  }
+
+  /* Queue section */
+  .queue-section {
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 40px;
+  }
+
+  .queue-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .queue-title {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  .queue-count {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+  }
+
+  .queue-sort {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .queue-sort-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .queue-sort select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 8px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .queue-sort select:focus { border-color: var(--accent); }
+
+  .queue-clear-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: none;
+  }
+
+  .queue-clear-btn.visible { display: block; }
+  .queue-clear-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  .queue-confirm-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #1a1010;
+    border: 1px solid #3a2020;
+    font-size: 11px;
+    color: var(--danger);
+  }
+
+  .queue-confirm-bar.visible { display: flex; }
+
+  .queue-confirm-bar span { flex: 1; }
+
+  .qcb-confirm {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--danger);
+    border: 1px solid var(--danger);
+    color: white;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .qcb-confirm:hover { opacity: 0.85; }
+
+  .qcb-cancel {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .qcb-cancel:hover { border-color: var(--muted); color: var(--text); }
+
+  .queue-empty {
+    padding: 24px;
+    border: 1px dashed var(--border);
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+  }
+
+  .queue-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  @media (max-width: 600px) {
+    .queue-grid { grid-template-columns: 1fr; }
+    .queue-sort { display: none; }
+  }
+
+  .queue-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .queue-card:hover { border-color: #3a3a3a; }
+
+  .queue-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .queue-card-company {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .queue-card-role {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .queue-card-score {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .queue-card-verdict {
+    font-size: 10px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 2px;
+  }
+
+  .queue-card-breakdown {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #1e1e1e;
+  }
+
+  .qc-dim {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 3px 7px;
+    border: 1px solid var(--border);
+  }
+
+  .queue-card-notes {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 8px;
+    max-height: 36px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .queue-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    gap: 8px;
+  }
+
+  .qc-remove {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .qc-remove:hover { border-color: var(--danger); color: var(--danger); }
+
+  .queue-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--accent);
+    color: #0e0e0e;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 100;
+  }
+
+  .queue-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Score colour helpers */
+  .score-strong { color: var(--accent); }
+  .score-apply  { color: var(--accent2); }
+  .score-weak   { color: var(--t3); }
+  .score-pass   { color: var(--muted); }
+
+  /* User bar */
+  .user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .user-identity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    display: none;
+  }
+
+  .user-avatar.loaded { display: block; }
+
+  .user-name {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .user-name span { color: var(--text); }
+
+  .logout-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 5px 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    display: inline-block;
+  }
+
+  .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
   .role-input-row {
     margin-bottom: 32px;
     display: grid;
@@ -537,6 +882,40 @@
     <p class="subtitle">Score job descriptions against your priorities. Weighted across four dimensions: technical fit, environment, compensation, and learning trajectory.</p>
   </header>
 
+  <div class="user-bar">
+    <div class="user-identity">
+      <img class="user-avatar" id="user-avatar" src="" alt="">
+      <div class="user-name" id="user-name"></div>
+    </div>
+    <a class="logout-btn" href="/.auth/logout">Log out</a>
+  </div>
+
+  <!-- Queue section -->
+  <div class="queue-section" id="queue-section">
+    <div class="queue-header">
+      <div class="queue-title">Pipeline</div>
+      <div class="queue-count" id="queue-count">0 roles</div>
+      <div class="queue-sort">
+        <span class="queue-sort-label">Sort by</span>
+        <select id="queue-sort-select" onchange="renderQueue()">
+          <option value="score-desc">Score ↓</option>
+          <option value="score-asc">Score ↑</option>
+          <option value="added-desc">Added ↓</option>
+          <option value="added-asc">Added ↑</option>
+        </select>
+      </div>
+      <button class="queue-clear-btn" id="queue-clear-btn" onclick="promptClearQueue()">Clear all</button>
+    </div>
+    <div class="queue-confirm-bar" id="queue-confirm-bar">
+      <span>Clear all roles from the pipeline? This cannot be undone.</span>
+      <button class="qcb-cancel" onclick="cancelClearQueue()">Cancel</button>
+      <button class="qcb-confirm" onclick="confirmClearQueue()">Clear pipeline</button>
+    </div>
+    <div id="queue-container">
+      <div class="queue-empty">No roles queued yet.<br>Score a role below and click <strong>Add to Pipeline</strong>.</div>
+    </div>
+  </div>
+
   <div class="role-input-row">
     <div class="field-group">
       <label class="field-label">Company</label>
@@ -549,392 +928,13 @@
   </div>
 
   <!-- Knockout flags -->
-  <div class="knockout-section">
-    <div class="knockout-title">⚠ Knockout Flags — check any that apply</div>
-    <div class="knockout-item">
-      <div class="ko-check" onclick="toggleKO(this)"></div>
-      <div class="ko-label">No AI/ML component in the role
-        <small>Role is generic software engineering with no Gen AI, RAG, or ML work mentioned</small>
-      </div>
-    </div>
-    <div class="knockout-item">
-      <div class="ko-check" onclick="toggleKO(this)"></div>
-      <div class="ko-label">Primarily pre-training or research focus
-        <small>Role is about training foundation models or academic research, not application engineering</small>
-      </div>
-    </div>
-    <div class="knockout-item">
-      <div class="ko-check" onclick="toggleKO(this)"></div>
-      <div class="ko-label">Large org with no clear AI product mandate
-        <small>Signals Citi-style politics, slow pace, and disconnection from real impact</small>
-      </div>
-    </div>
-    <div class="knockout-item">
-      <div class="ko-check" onclick="toggleKO(this)"></div>
-      <div class="ko-label">Requires >3 years experience in a specific tool you don't have
-        <small>Hard requirements (not preferred) in tools outside your stack with no adjacent experience</small>
-      </div>
-    </div>
-    <div class="knockout-item">
-      <div class="ko-check" onclick="toggleKO(this)"></div>
-      <div class="ko-label">Fully on-site outside London or requires relocation
-        <small>Location constraints that don't work for you</small>
-      </div>
-    </div>
-    <div id="ko-warning" class="knockout-warning">
-      One or more knockout flags raised. Consider carefully before investing time in this application.
-    </div>
-  </div>
+  <div id="knockout-mount"></div>
 
   <!-- Score dashboard -->
-  <div class="dashboard">
-    <div class="score-card">
-      <div class="score-label">Technical Fit</div>
-      <div><span class="score-value" id="s1-val">0</span><span class="score-max"> / 40</span></div>
-    </div>
-    <div class="score-card">
-      <div class="score-label">Environment & Culture</div>
-      <div><span class="score-value" id="s2-val">0</span><span class="score-max"> / 30</span></div>
-    </div>
-    <div class="score-card">
-      <div class="score-label">Comp & FIRE</div>
-      <div><span class="score-value" id="s3-val">0</span><span class="score-max"> / 20</span></div>
-    </div>
-    <div class="score-card">
-      <div class="score-label">Learning Trajectory</div>
-      <div><span class="score-value" id="s4-val">0</span><span class="score-max"> / 10</span></div>
-    </div>
-  </div>
+  <div id="dashboard-mount"></div>
 
-  <div class="total-bar">
-    <div>
-      <div class="total-label">Total Score</div>
-      <div class="total-score" id="total-val">0</div>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="progress-fill"></div>
-    </div>
-    <div class="verdict">
-      <strong id="verdict-label">—</strong>
-      <span id="verdict-sub">Score the role to see a recommendation</span>
-    </div>
-  </div>
-
-  <!-- Section 1: Technical Fit -->
-  <div class="section s1">
-    <div class="section-header">
-      <div class="section-title">Technical Fit & Skill Match</div>
-      <div class="section-weight">Weight: 40pts</div>
-      <div class="section-score-inline" id="s1-inline">0/40</div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role explicitly mention RAG, vector search, or LLM application engineering?</div>
-        <div class="item-hint">Signals: <span class="signal">RAG, embeddings, vector DB, LangChain, semantic search, retrieval pipeline</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="No">0</button>
-        <button onclick="rate(this,1)" title="Vague mention">1</button>
-        <button onclick="rate(this,2)" title="Mentioned">2</button>
-        <button onclick="rate(this,3)" title="Core focus">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role involve agentic systems or workflow orchestration?</div>
-        <div class="item-hint">Signals: <span class="signal">LangGraph, agents, tool use, multi-step reasoning, autonomous workflows</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="No">0</button>
-        <button onclick="rate(this,1)" title="Adjacent">1</button>
-        <button onclick="rate(this,2)" title="Mentioned">2</button>
-        <button onclick="rate(this,3)" title="Core focus">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Is the Azure / cloud stack aligned with your experience?</div>
-        <div class="item-hint">Signals: <span class="signal">Azure OpenAI, Azure AI Search, AWS Bedrock, GCP Vertex — any major cloud AI platform</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="No cloud">0</button>
-        <button onclick="rate(this,1)" title="Different cloud">1</button>
-        <button onclick="rate(this,2)" title="Adjacent">2</button>
-        <button onclick="rate(this,3)" title="Azure match">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role require Python as a primary language?</div>
-        <div class="item-hint">Signals: <span class="signal">Python listed first or prominently; ML/AI roles almost always require it</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="No Python">0</button>
-        <button onclick="rate(this,1)" title="Nice to have">1</button>
-        <button onclick="rate(this,2)" title="Required">2</button>
-        <button onclick="rate(this,3)" title="Primary language">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Is your data engineering or backend background directly relevant?</div>
-        <div class="item-hint">Signals: <span class="signal">pipeline design, data ingestion, Java/Spring, production systems, MLOps, backend APIs</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="Not relevant">0</button>
-        <button onclick="rate(this,1)" title="Marginal">1</button>
-        <button onclick="rate(this,2)" title="Useful">2</button>
-        <button onclick="rate(this,3)" title="Core requirement">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role involve evaluation, observability, or production quality of AI systems?</div>
-        <div class="item-hint">Signals: <span class="signal">RAGAS, evals, LangSmith, monitoring, quality metrics, A/B testing AI outputs</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="No">0</button>
-        <button onclick="rate(this,1)" title="Implicit">1</button>
-        <button onclick="rate(this,2)" title="Mentioned">2</button>
-        <button onclick="rate(this,3)" title="Core focus">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="1" data-max="4">
-      <div class="item-left">
-        <div class="item-question">How well does the financial services domain knowledge translate?</div>
-        <div class="item-hint">Signals: <span class="signal">fintech, banking, financial data, compliance, capital markets, trading — or adjacent regulated industries</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="Irrelevant domain">0</button>
-        <button onclick="rate(this,1)" title="Adjacent">1</button>
-        <button onclick="rate(this,2)" title="Useful">2</button>
-        <button onclick="rate(this,3)" title="Relevant">3</button>
-        <button onclick="rate(this,4)" title="Direct match">4</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Section 2: Environment & Culture -->
-  <div class="section s2">
-    <div class="section-header">
-      <div class="section-title">Environment & Culture Fit</div>
-      <div class="section-weight">Weight: 30pts</div>
-      <div class="section-score-inline" id="s2-inline">0/30</div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the company have a genuine AI product, not just an AI initiative?</div>
-        <div class="item-hint">Signals: <span class="signal">AI is core to revenue or product, not a side project or cost-cutting exercise</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role suggest proximity to real impact — shipping products, serving users?</div>
-        <div class="item-hint">Signals: <span class="signal">cross-functional teams, direct user feedback, product roadmap involvement — absence of "internal platform" language</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the company size and stage suggest low politics and fast pace?</div>
-        <div class="item-hint">Signals: <span class="signal">scale-up 50–500 people, Series B/C, flat structure, startup culture — not a 50,000 person org</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Is there evidence of engineering craft and technical rigour in how the role is written?</div>
-        <div class="item-hint">Signals: <span class="signal">specific technical requirements, system design mentioned, code quality culture, technical blog or open source presence</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the role offer meaningful ownership and autonomy?</div>
-        <div class="item-hint">Signals: <span class="signal">lead, own, design, architect — not "contribute to" or "support the team in maintaining"</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the company have a credible name that builds your CV for future moves?</div>
-        <div class="item-hint">Signals: <span class="signal">recognised in AI/tech/fintech circles in London; would make a founder or investor take notice</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Is there any signal of supply chain, logistics, commerce, or operational domain exposure?</div>
-        <div class="item-hint">Signals: <span class="signal">inventory, distribution, fulfilment, procurement, B2B commerce — directly relevant to family business</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="2" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the working arrangement suit you — hybrid or remote flexibility?</div>
-        <div class="item-hint">Signals: <span class="signal">London-based hybrid, 2–3 days in office — fully remote or fully on-site are both harder to sustain</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Section 3: Comp & FIRE -->
-  <div class="section s3">
-    <div class="section-header">
-      <div class="section-title">Compensation & FIRE Alignment</div>
-      <div class="section-weight">Weight: 20pts</div>
-      <div class="section-score-inline" id="s3-inline">0/20</div>
-    </div>
-
-    <div class="item" data-section="3" data-max="4">
-      <div class="item-left">
-        <div class="item-question">What is the likely base salary range for this role and location?</div>
-        <div class="item-hint">Signals: <span class="signal">AI Engineer London: £70–90k mid, £90–130k senior, £130k+ staff/principal. Big tech adds 30–50% on top via equity/bonus</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)" title="<£70k">0</button>
-        <button onclick="rate(this,1)" title="£70–85k">1</button>
-        <button onclick="rate(this,2)" title="£85–100k">2</button>
-        <button onclick="rate(this,3)" title="£100–130k">3</button>
-        <button onclick="rate(this,4)" title="£130k+">4</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="3" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Is there meaningful equity or bonus on top of base?</div>
-        <div class="item-hint">Signals: <span class="signal">RSUs, EMI options, performance bonus, profit share — not just a token LTIP</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="3" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the total compensation trajectory support meaningful savings rate within 2–3 years?</div>
-        <div class="item-hint">Signals: <span class="signal">clear seniority ladder, progression visible in JD, company stage suggests comp growth over time</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="3" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Does the company's financial health and stage suggest stable employment for 2–3 years?</div>
-        <div class="item-hint">Signals: <span class="signal">funded, profitable, or large enough to weather a downturn — avoids early-stage burn risk</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Section 4: Learning Trajectory -->
-  <div class="section s4">
-    <div class="section-header">
-      <div class="section-title">Learning & Career Trajectory</div>
-      <div class="section-weight">Weight: 10pts</div>
-      <div class="section-score-inline" id="s4-inline">0/10</div>
-    </div>
-
-    <div class="item" data-section="4" data-max="3">
-      <div class="item-left">
-        <div class="item-question">Will this role develop skills directly applicable to transforming the family business?</div>
-        <div class="item-hint">Signals: <span class="signal">AI for operations, demand forecasting, supply chain, customer analytics, B2B product thinking</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-      </div>
-    </div>
-
-    <div class="item" data-section="4" data-max="4">
-      <div class="item-left">
-        <div class="item-question">Does the role expose you to the full AI product lifecycle — not just implementation?</div>
-        <div class="item-hint">Signals: <span class="signal">problem scoping, model selection, eval design, deployment, monitoring — end-to-end ownership builds founder instincts</span></div>
-      </div>
-      <div class="rating">
-        <button onclick="rate(this,0)">0</button>
-        <button onclick="rate(this,1)">1</button>
-        <button onclick="rate(this,2)">2</button>
-        <button onclick="rate(this,3)">3</button>
-        <button onclick="rate(this,4)">4</button>
-      </div>
-    </div>
-
-  </div>
+  <!-- Sections -->
+  <div id="sections-mount"></div>
 
   <!-- Notes -->
   <div class="notes-area">
@@ -942,15 +942,291 @@
     <textarea id="notes" placeholder="Gut feel, red flags, things to research, questions to ask in interview..."></textarea>
     <br>
     <button class="reset-btn" onclick="resetAll()">Reset Evaluator</button>
+    <button class="save-btn" onclick="addToQueue()">+ Add to Pipeline</button>
   </div>
 
 </div>
 
-<script>
-  const maxScores = { 1: 40, 2: 30, 3: 20, 4: 10 };
-  const scores = { 1: 0, 2: 0, 3: 0, 4: 0 };
+<div class="queue-toast" id="queue-toast"></div>
 
-  // Track per-item scores
+<script>
+  // ── CONTENT CONFIG ───────────────────────────────────────────────────────
+  // Edit questions, signals, button labels, and section weights here.
+  // The evaluator renders entirely from this object — no HTML changes needed.
+
+  const CONTENT = {
+    meta: {
+      eyebrow: 'Gen AI Engineer · London · 2026',
+      title: 'Role <em>Evaluator</em>',
+      subtitle: 'Score job descriptions against your priorities. Weighted across four dimensions: technical fit, environment, compensation, and learning trajectory.',
+    },
+
+    knockouts: [
+      {
+        label: 'No AI/ML component in the role',
+        detail: 'Role is generic software engineering with no Gen AI, RAG, or ML work mentioned',
+      },
+      {
+        label: 'Primarily pre-training or research focus',
+        detail: 'Role is about training foundation models or academic research, not application engineering',
+      },
+      {
+        label: 'Large org with no clear AI product mandate',
+        detail: 'Signals Citi-style politics, slow pace, and disconnection from real impact',
+      },
+      {
+        label: 'Requires >3 years experience in a specific tool you don\'t have',
+        detail: 'Hard requirements (not preferred) in tools outside your stack with no adjacent experience',
+      },
+      {
+        label: 'Fully on-site outside London or requires relocation',
+        detail: 'Location constraints that don\'t work for you',
+      },
+    ],
+
+    sections: [
+      {
+        id: 1,
+        title: 'Technical Fit & Skill Match',
+        weight: 40,
+        items: [
+          {
+            question: 'Does the role explicitly mention RAG, vector search, or LLM application engineering?',
+            signals: 'RAG, embeddings, vector DB, LangChain, semantic search, retrieval pipeline',
+            max: 3,
+            labels: ['No', 'Vague mention', 'Mentioned', 'Core focus'],
+          },
+          {
+            question: 'Does the role involve agentic systems or workflow orchestration?',
+            signals: 'LangGraph, agents, tool use, multi-step reasoning, autonomous workflows',
+            max: 3,
+            labels: ['No', 'Adjacent', 'Mentioned', 'Core focus'],
+          },
+          {
+            question: 'Is the Azure / cloud stack aligned with your experience?',
+            signals: 'Azure OpenAI, Azure AI Search, AWS Bedrock, GCP Vertex — any major cloud AI platform',
+            max: 3,
+            labels: ['No cloud', 'Different cloud', 'Adjacent', 'Azure match'],
+          },
+          {
+            question: 'Does the role require Python as a primary language?',
+            signals: 'Python listed first or prominently; ML/AI roles almost always require it',
+            max: 3,
+            labels: ['No Python', 'Nice to have', 'Required', 'Primary language'],
+          },
+          {
+            question: 'Is your data engineering or backend background directly relevant?',
+            signals: 'pipeline design, data ingestion, Java/Spring, production systems, MLOps, backend APIs',
+            max: 3,
+            labels: ['Not relevant', 'Marginal', 'Useful', 'Core requirement'],
+          },
+          {
+            question: 'Does the role involve evaluation, observability, or production quality of AI systems?',
+            signals: 'RAGAS, evals, LangSmith, monitoring, quality metrics, A/B testing AI outputs',
+            max: 3,
+            labels: ['No', 'Implicit', 'Mentioned', 'Core focus'],
+          },
+          {
+            question: 'How well does the financial services domain knowledge translate?',
+            signals: 'fintech, banking, financial data, compliance, capital markets, trading — or adjacent regulated industries',
+            max: 4,
+            labels: ['Irrelevant domain', 'Adjacent', 'Useful', 'Relevant', 'Direct match'],
+          },
+        ],
+      },
+      {
+        id: 2,
+        title: 'Environment & Culture Fit',
+        weight: 30,
+        items: [
+          {
+            question: 'Does the company have a genuine AI product, not just an AI initiative?',
+            signals: 'AI is core to revenue or product, not a side project or cost-cutting exercise',
+            max: 3,
+          },
+          {
+            question: 'Does the role suggest proximity to real impact — shipping products, serving users?',
+            signals: 'cross-functional teams, direct user feedback, product roadmap involvement — absence of "internal platform" language',
+            max: 3,
+          },
+          {
+            question: 'Does the company size and stage suggest low politics and fast pace?',
+            signals: 'scale-up 50–500 people, Series B/C, flat structure, startup culture — not a 50,000 person org',
+            max: 3,
+          },
+          {
+            question: 'Is there evidence of engineering craft and technical rigour in how the role is written?',
+            signals: 'specific technical requirements, system design mentioned, code quality culture, technical blog or open source presence',
+            max: 3,
+          },
+          {
+            question: 'Does the role offer meaningful ownership and autonomy?',
+            signals: 'lead, own, design, architect — not "contribute to" or "support the team in maintaining"',
+            max: 3,
+          },
+          {
+            question: 'Does the company have a credible name that builds your CV for future moves?',
+            signals: 'recognised in AI/tech/fintech circles in London; would make a founder or investor take notice',
+            max: 3,
+          },
+          {
+            question: 'Is there any signal of supply chain, logistics, commerce, or operational domain exposure?',
+            signals: 'inventory, distribution, fulfilment, procurement, B2B commerce — directly relevant to family business',
+            max: 3,
+          },
+          {
+            question: 'Does the working arrangement suit you — hybrid or remote flexibility?',
+            signals: 'London-based hybrid, 2–3 days in office — fully remote or fully on-site are both harder to sustain',
+            max: 3,
+          },
+        ],
+      },
+      {
+        id: 3,
+        title: 'Compensation & FIRE Alignment',
+        weight: 20,
+        items: [
+          {
+            question: 'What is the likely base salary range for this role and location?',
+            signals: 'AI Engineer London: £70–90k mid, £90–130k senior, £130k+ staff/principal. Big tech adds 30–50% on top via equity/bonus',
+            max: 4,
+            labels: ['<£70k', '£70–85k', '£85–100k', '£100–130k', '£130k+'],
+          },
+          {
+            question: 'Is there meaningful equity or bonus on top of base?',
+            signals: 'RSUs, EMI options, performance bonus, profit share — not just a token LTIP',
+            max: 3,
+          },
+          {
+            question: 'Does the total compensation trajectory support meaningful savings rate within 2–3 years?',
+            signals: 'clear seniority ladder, progression visible in JD, company stage suggests comp growth over time',
+            max: 3,
+          },
+          {
+            question: 'Does the company\'s financial health and stage suggest stable employment for 2–3 years?',
+            signals: 'funded, profitable, or large enough to weather a downturn — avoids early-stage burn risk',
+            max: 3,
+          },
+        ],
+      },
+      {
+        id: 4,
+        title: 'Learning & Career Trajectory',
+        weight: 10,
+        items: [
+          {
+            question: 'Will this role develop skills directly applicable to transforming the family business?',
+            signals: 'AI for operations, demand forecasting, supply chain, customer analytics, B2B product thinking',
+            max: 3,
+          },
+          {
+            question: 'Does the role expose you to the full AI product lifecycle — not just implementation?',
+            signals: 'problem scoping, model selection, eval design, deployment, monitoring — end-to-end ownership builds founder instincts',
+            max: 4,
+          },
+        ],
+      },
+    ],
+  };
+
+  // ── RENDERER ─────────────────────────────────────────────────────────────
+
+  function renderEvaluator() {
+    // Header
+    document.querySelector('.eyebrow').textContent = CONTENT.meta.eyebrow;
+    document.querySelector('h1').innerHTML = CONTENT.meta.title;
+    document.querySelector('.subtitle').textContent = CONTENT.meta.subtitle;
+
+    // Knockouts
+    const koMount = document.getElementById('knockout-mount');
+    koMount.innerHTML = `
+      <div class="knockout-section">
+        <div class="knockout-title">⚠ Knockout Flags — check any that apply</div>
+        ${CONTENT.knockouts.map(ko => `
+          <div class="knockout-item">
+            <div class="ko-check" onclick="toggleKO(this)"></div>
+            <div class="ko-label">${ko.label}<small>${ko.detail}</small></div>
+          </div>
+        `).join('')}
+        <div id="ko-warning" class="knockout-warning">
+          One or more knockout flags raised. Consider carefully before investing time in this application.
+        </div>
+      </div>`;
+
+    // Dashboard
+    const dashMount = document.getElementById('dashboard-mount');
+    const dashLabels = { 1: 'Technical Fit', 2: 'Environment & Culture', 3: 'Comp & FIRE', 4: 'Learning Trajectory' };
+    dashMount.innerHTML = `
+      <div class="dashboard">
+        ${CONTENT.sections.map(s => `
+          <div class="score-card">
+            <div class="score-label">${dashLabels[s.id]}</div>
+            <div><span class="score-value" id="s${s.id}-val">0</span><span class="score-max"> / ${s.weight}</span></div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="total-bar">
+        <div>
+          <div class="total-label">Total Score</div>
+          <div class="total-score" id="total-val">0</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="verdict">
+          <strong id="verdict-label">—</strong>
+          <span id="verdict-sub">Score the role to see a recommendation</span>
+        </div>
+      </div>`;
+
+    // Sections
+    const sectMount = document.getElementById('sections-mount');
+    sectMount.innerHTML = CONTENT.sections.map(s => `
+      <div class="section s${s.id}">
+        <div class="section-header">
+          <div class="section-title">${s.title}</div>
+          <div class="section-weight">Weight: ${s.weight}pts</div>
+          <div class="section-score-inline" id="s${s.id}-inline">0/${s.weight}</div>
+        </div>
+        ${s.items.map(item => {
+          const btns = Array.from({ length: item.max + 1 }, (_, i) => {
+            const label = item.labels ? item.labels[i] : String(i);
+            return `<button onclick="rate(this,${i})" title="${label}">${i}</button>`;
+          }).join('');
+          return `
+            <div class="item" data-section="${s.id}" data-max="${item.max}">
+              <div class="item-left">
+                <div class="item-question">${item.question}</div>
+                <div class="item-hint">Signals: <span class="signal">${item.signals}</span></div>
+              </div>
+              <div class="rating">${btns}</div>
+            </div>`;
+        }).join('')}
+      </div>`).join('');
+  }
+
+  renderEvaluator();
+
+  // ── USER IDENTITY ─────────────────────────────────────────────────────────
+
+  fetch('/.auth/me')
+    .then(r => r.json())
+    .then(data => {
+      const user = data.clientPrincipal;
+      if (!user) return;
+      document.getElementById('user-name').innerHTML = `logged in as <span>${user.userDetails}</span>`;
+      // GitHub exposes the avatar via their API using the userDetails (username)
+      const avatar = document.getElementById('user-avatar');
+      avatar.src = `https://github.com/${user.userDetails}.png?size=44`;
+      avatar.onload = () => avatar.classList.add('loaded');
+    })
+    .catch(() => {}); // silently ignore — only works when deployed on SWA
+
+  // ── SCORING ───────────────────────────────────────────────────────────────
+
+  const maxScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.weight]));
+  const scores = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+
   const items = document.querySelectorAll('.item[data-section]');
   const itemScores = new Array(items.length).fill(0);
 
@@ -959,7 +1235,6 @@
     const allBtns = item.querySelectorAll('button');
     const idx = Array.from(items).indexOf(item);
     const max = parseInt(item.dataset.max);
-    const section = parseInt(item.dataset.section);
 
     allBtns.forEach((b, i) => {
       b.classList.remove('active', 'low', 'mid', 'high');
@@ -976,42 +1251,32 @@
   }
 
   function recalc() {
-    // Reset section scores
     Object.keys(scores).forEach(k => scores[k] = 0);
-
     items.forEach((item, i) => {
-      const section = parseInt(item.dataset.section);
-      scores[section] += itemScores[i];
+      scores[parseInt(item.dataset.section)] += itemScores[i];
     });
 
-    // Section maxes from actual items
-    const actualMax = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    const actualMax = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
     items.forEach(item => {
       actualMax[parseInt(item.dataset.section)] += parseInt(item.dataset.max);
     });
 
-    // Scale to weighted maxes
     const weighted = {};
-    [1,2,3,4].forEach(s => {
-      weighted[s] = actualMax[s] > 0
-        ? Math.round((scores[s] / actualMax[s]) * maxScores[s])
+    CONTENT.sections.forEach(s => {
+      weighted[s.id] = actualMax[s.id] > 0
+        ? Math.round((scores[s.id] / actualMax[s.id]) * maxScores[s.id])
         : 0;
     });
 
-    const total = weighted[1] + weighted[2] + weighted[3] + weighted[4];
+    const total = Object.values(weighted).reduce((a, b) => a + b, 0);
 
-    document.getElementById('s1-val').textContent = weighted[1];
-    document.getElementById('s2-val').textContent = weighted[2];
-    document.getElementById('s3-val').textContent = weighted[3];
-    document.getElementById('s4-val').textContent = weighted[4];
-    document.getElementById('s1-inline').textContent = weighted[1] + '/40';
-    document.getElementById('s2-inline').textContent = weighted[2] + '/30';
-    document.getElementById('s3-inline').textContent = weighted[3] + '/20';
-    document.getElementById('s4-inline').textContent = weighted[4] + '/10';
+    CONTENT.sections.forEach(s => {
+      document.getElementById(`s${s.id}-val`).textContent = weighted[s.id];
+      document.getElementById(`s${s.id}-inline`).textContent = `${weighted[s.id]}/${s.weight}`;
+    });
     document.getElementById('total-val').textContent = total;
     document.getElementById('progress-fill').style.width = total + '%';
 
-    // Verdict
     let label, sub;
     if (total >= 80) { label = 'Strong Apply'; sub = 'High alignment across all dimensions. Prioritise this application.'; }
     else if (total >= 65) { label = 'Apply'; sub = 'Good fit with some gaps. Worth the investment.'; }
@@ -1042,6 +1307,166 @@
     recalc();
   }
 
+  // ── QUEUE ─────────────────────────────────────────────────────────────────
+
+  const QUEUE_KEY = 'job-evaluator-queue';
+  let queue = [];
+
+  async function loadQueue() {
+    try {
+      const result = await window.storage.get(QUEUE_KEY);
+      queue = result ? JSON.parse(result.value) : [];
+    } catch (e) {
+      queue = [];
+    }
+    renderQueue();
+  }
+
+  async function saveQueue() {
+    try {
+      await window.storage.set(QUEUE_KEY, JSON.stringify(queue));
+    } catch (e) {
+      console.error('Storage error:', e);
+    }
+  }
+
+  function getVerdictClass(total) {
+    if (total >= 80) return 'score-strong';
+    if (total >= 65) return 'score-apply';
+    if (total >= 35) return 'score-weak';
+    return 'score-pass';
+  }
+
+  function getVerdictLabel(total) {
+    if (total >= 80) return 'Strong Apply';
+    if (total >= 65) return 'Apply';
+    if (total >= 50) return 'Apply Selectively';
+    if (total >= 35) return 'Weak Fit';
+    return 'Pass';
+  }
+
+  function addToQueue() {
+    const company = document.getElementById('company').value.trim();
+    const role = document.getElementById('role').value.trim();
+
+    if (!company && !role) {
+      showToast('Enter a company or role title first');
+      return;
+    }
+
+    const actualMax = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+    items.forEach(item => {
+      actualMax[parseInt(item.dataset.section)] += parseInt(item.dataset.max);
+    });
+    const sectScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+    items.forEach((item, i) => {
+      sectScores[parseInt(item.dataset.section)] += itemScores[i];
+    });
+    const weighted = {};
+    CONTENT.sections.forEach(s => {
+      weighted[s.id] = actualMax[s.id] > 0
+        ? Math.round((sectScores[s.id] / actualMax[s.id]) * maxScores[s.id])
+        : 0;
+    });
+    const total = Object.values(weighted).reduce((a, b) => a + b, 0);
+
+    const entry = {
+      id: Date.now(),
+      company: company || '—',
+      role: role || '—',
+      total,
+      weighted,
+      notes: document.getElementById('notes').value.trim(),
+      addedAt: new Date().toISOString(),
+    };
+
+    queue.push(entry);
+    saveQueue();
+    renderQueue();
+    showToast(`${entry.company} · ${entry.role} added to pipeline`);
+  }
+
+  function removeFromQueue(id) {
+    queue = queue.filter(e => e.id !== id);
+    saveQueue();
+    renderQueue();
+  }
+
+  function renderQueue() {
+    const sort = document.getElementById('queue-sort-select').value;
+    const sorted = [...queue].sort((a, b) => {
+      if (sort === 'score-desc') return b.total - a.total;
+      if (sort === 'score-asc')  return a.total - b.total;
+      if (sort === 'added-desc') return b.id - a.id;
+      if (sort === 'added-asc')  return a.id - b.id;
+      return 0;
+    });
+
+    document.getElementById('queue-count').textContent = `${queue.length} role${queue.length !== 1 ? 's' : ''}`;
+    document.getElementById('queue-clear-btn').classList.toggle('visible', queue.length > 0);
+
+    const container = document.getElementById('queue-container');
+    if (sorted.length === 0) {
+      container.innerHTML = `<div class="queue-empty">No roles queued yet.<br>Score a role below and click <strong>Add to Pipeline</strong>.</div>`;
+      return;
+    }
+
+    const dimLabels = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.title.split(' ')[0]]));
+    container.innerHTML = `<div class="queue-grid">${sorted.map(e => `
+      <div class="queue-card">
+        <div class="queue-card-top">
+          <div>
+            <div class="queue-card-company">${escHtml(e.company)}</div>
+            <div class="queue-card-role">${escHtml(e.role)}</div>
+          </div>
+          <div>
+            <div class="queue-card-score ${getVerdictClass(e.total)}">${e.total}</div>
+            <div class="queue-card-verdict">${getVerdictLabel(e.total)}</div>
+          </div>
+        </div>
+        <div class="queue-card-breakdown">
+          ${CONTENT.sections.map(s => `<span class="qc-dim">${dimLabels[s.id]} ${e.weighted[s.id]}/${s.weight}</span>`).join('')}
+        </div>
+        ${e.notes ? `<div class="queue-card-notes">${escHtml(e.notes)}</div>` : ''}
+        <div class="queue-card-actions">
+          <button class="qc-remove" onclick="removeFromQueue(${e.id})">Remove</button>
+        </div>
+      </div>
+    `).join('')}</div>`;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function showToast(msg) {
+    const toast = document.getElementById('queue-toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+  }
+
+  function promptClearQueue() {
+    document.getElementById('queue-confirm-bar').classList.add('visible');
+    document.getElementById('queue-clear-btn').style.display = 'none';
+  }
+
+  function cancelClearQueue() {
+    document.getElementById('queue-confirm-bar').classList.remove('visible');
+    document.getElementById('queue-clear-btn').style.display = '';
+  }
+
+  async function confirmClearQueue() {
+    queue = [];
+    await saveQueue();
+    document.getElementById('queue-confirm-bar').classList.remove('visible');
+    renderQueue();
+    showToast('Pipeline cleared');
+  }
+
+  loadQueue();
   recalc();
 </script>
 </body>
