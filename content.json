@@ -71,7 +71,7 @@
         {
           "question": "How well does the financial services domain knowledge translate?",
           "signals": "fintech, banking, financial data, compliance, capital markets, trading — or adjacent regulated industries",
-          "max": 4,
+          "max": 3,
           "labels": ["Irrelevant domain", "Adjacent", "Useful", "Relevant", "Direct match"]
         }
       ]
@@ -131,7 +131,7 @@
         {
           "question": "What is the likely base salary range for this role and location?",
           "signals": "AI Engineer London: £70–90k mid, £90–130k senior, £130k+ staff/principal. Big tech adds 30–50% on top via equity/bonus",
-          "max": 4,
+          "max": 3,
           "labels": ["<£70k", "£70–85k", "£85–100k", "£100–130k", "£130k+"]
         },
         {
@@ -164,7 +164,7 @@
         {
           "question": "Does the role expose you to the full AI product lifecycle — not just implementation?",
           "signals": "problem scoping, model selection, eval design, deployment, monitoring — end-to-end ownership builds founder instincts",
-          "max": 4
+          "max": 3
         }
       ]
     }
