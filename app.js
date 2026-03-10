@@ -113,7 +113,8 @@
       items      = document.querySelectorAll('.item[data-section]');
       itemScores = new Array(items.length).fill(0);
 
-      renderQueue();
+      renderSummary();
+      renderTable();
       recalc();
     } catch (err) {
       console.error('Failed to initialize:', err);
@@ -358,9 +359,16 @@
     recalc();
   }
 
-  // ── QUEUE ─────────────────────────────────────────────────────────────────
+  // ── PIPELINE STATE ────────────────────────────────────────────────────────
 
-  let queue = [];
+  const STATUS_LABELS = {
+    'bookmarked':   'Bookmarked',
+    'applied':      'Applied',
+    'phone-screen': 'Phone Screen',
+    'interview':    'Interview',
+    'offer':        'Offer',
+    'rejected':     'Rejected',
+  };
 
   const INTEREST_LABELS = {
     'not-interested':      'Not Interested',
@@ -369,27 +377,95 @@
     'interested':          'Interested',
   };
 
-  function interestBadge(level) {
-    const label = INTEREST_LABELS[level] || level;
-    return `<div class="interest-badge ${level}">${label}</div>`;
+  const STATUS_CLASSES = {
+    'bookmarked':   'status-bookmarked',
+    'applied':      'status-applied',
+    'phone-screen': 'status-phone',
+    'interview':    'status-interview',
+    'offer':        'status-offer',
+    'rejected':     'status-rejected',
+  };
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
-  const INTEREST_LEVELS = ['not-interested', 'considering', 'pursuing', 'interested'];
-  let currentInterest = 'interested';
+  let pipelineState = {
+    queue:     [],
+    sortKey:   'added-desc',
+    activeId:  null,
+    filters: {
+      interest: new Set(),
+      verdict:  new Set(),
+      status:   new Set(),
+    },
+  };
 
-  function setInterest(btn, level) {
-    currentInterest = level;
-    document.querySelectorAll('.interest-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+  // keep legacy `queue` reference working for addToQueue
+  Object.defineProperty(window, 'queue', {
+    get: () => pipelineState.queue,
+    set: (v) => { pipelineState.queue = v; },
+  });
+
+  function getVerdictKey(total) {
+    if (total >= 80) return 'strong-apply';
+    if (total >= 65) return 'apply';
+    if (total >= 50) return 'apply-selectively';
+    if (total >= 35) return 'weak-fit';
+    return 'skip';
   }
 
-  function resetInterest() {
-    currentInterest = 'interested';
-    document.querySelectorAll('.interest-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.level === 'interested');
+  function getFiltered() {
+    const { queue, sortKey, filters } = pipelineState;
+    const { interest, verdict, status } = filters;
+
+    const filtered = queue.filter(e => {
+      if (interest.size && !interest.has(e.interest || 'not-interested')) return false;
+      if (verdict.size  && !verdict.has(getVerdictKey(e.total)))          return false;
+      if (status.size   && !status.has(e.status   || 'bookmarked'))       return false;
+      return true;
+    });
+
+    return filtered.sort((a, b) => {
+      if (sortKey === 'score-desc') return b.total - a.total;
+      if (sortKey === 'score-asc')  return a.total - b.total;
+      if (sortKey === 'added-desc') return new Date(b.addedAt) - new Date(a.addedAt);
+      if (sortKey === 'added-asc')  return new Date(a.addedAt) - new Date(b.addedAt);
+      return 0;
     });
   }
 
+  function toggleFilter(group, value) {
+    const set = pipelineState.filters[group];
+    set.has(value) ? set.delete(value) : set.add(value);
+    renderSummary();
+    renderTable();
+  }
+
+  function clearFilters() {
+    pipelineState.filters.interest.clear();
+    pipelineState.filters.verdict.clear();
+    pipelineState.filters.status.clear();
+    renderSummary();
+    renderTable();
+  }
+
+  function filterByStatus(status) {
+    // Called from summary bar chips — set status filter exclusively
+    const set = pipelineState.filters.status;
+    if (set.size === 1 && set.has(status)) {
+      set.clear();
+    } else {
+      set.clear();
+      set.add(status);
+    }
+    renderSummary();
+    renderTable();
+  }
 
   function getVerdictClass(total) {
     if (total >= 80) return 'score-strong';
@@ -404,6 +480,295 @@
     if (total >= 50) return 'Apply Selectively';
     if (total >= 35) return 'Weak Fit';
     return 'Skip';
+  }
+
+  function interestBadge(level) {
+    const label = INTEREST_LABELS[level] || level;
+    return `<span class="interest-badge ${level}">${label}</span>`;
+  }
+
+  function statusBadge(status) {
+    if (!status) return '<span class="status-badge status-bookmarked">Bookmarked</span>';
+    const label = STATUS_LABELS[status] || status;
+    const cls   = STATUS_CLASSES[status] || '';
+    return `<span class="status-badge ${cls}">${label}</span>`;
+  }
+
+  // ── TABLE RENDER ──────────────────────────────────────────────────────────
+
+  function renderSummary() {
+    const { queue, filters } = pipelineState;
+    const container = document.getElementById('summary-bar');
+    if (!container) return;
+
+    if (queue.length === 0) { container.innerHTML = ''; return; }
+
+    const avgScore = queue.length
+      ? Math.round(queue.reduce((s, e) => s + e.total, 0) / queue.length)
+      : 0;
+
+    // count per status (only statuses that appear)
+    const statusCounts = {};
+    queue.forEach(e => {
+      const s = e.status || 'bookmarked';
+      statusCounts[s] = (statusCounts[s] || 0) + 1;
+    });
+
+    const activeStatus = filters.status;
+    const hasFilters = filters.interest.size || filters.verdict.size || filters.status.size;
+
+    container.innerHTML = `
+      <div class="summary-stats">
+        <span class="summary-stat"><span class="summary-stat-val">${queue.length}</span> role${queue.length !== 1 ? 's' : ''}</span>
+        <span class="summary-divider">·</span>
+        <span class="summary-stat">avg <span class="summary-stat-val">${avgScore}</span></span>
+      </div>
+      <div class="summary-status-chips">
+        ${Object.entries(STATUS_LABELS)
+          .filter(([val]) => statusCounts[val])
+          .map(([val, lbl]) => `
+            <button class="summary-chip ${STATUS_CLASSES[val]}${activeStatus.has(val) ? ' active' : ''}"
+                    onclick="filterByStatus('${val}')">${lbl} <span class="summary-chip-count">${statusCounts[val]}</span></button>
+          `).join('')}
+      </div>
+      ${hasFilters ? `<button class="filter-clear-btn" onclick="clearFilters()">✕ Clear filters</button>` : ''}
+    `;
+  }
+
+  function renderTable() {
+    pipelineState.sortKey = document.getElementById('queue-sort-select').value;
+    const filtered = getFiltered();
+    const { queue, activeId, filters } = pipelineState;
+
+    document.getElementById('queue-count').textContent = `${queue.length} role${queue.length !== 1 ? 's' : ''}`;
+    document.getElementById('queue-clear-btn').classList.toggle('visible', queue.length > 0);
+
+    // Render filter bar
+    const hasFilters = filters.interest.size || filters.verdict.size || filters.status.size;
+    document.getElementById('filter-bar').innerHTML = `
+      <div class="filter-group">
+        <span class="filter-group-label">Interest</span>
+        ${Object.entries(INTEREST_LABELS).map(([val, lbl]) => `
+          <button class="filter-pill interest-pill ${val}${filters.interest.has(val) ? ' active' : ''}"
+                  onclick="toggleFilter('interest', '${val}')">${lbl}</button>
+        `).join('')}
+      </div>
+      <div class="filter-group">
+        <span class="filter-group-label">Verdict</span>
+        ${[
+          ['strong-apply', 'Strong Apply'],
+          ['apply', 'Apply'],
+          ['apply-selectively', 'Apply Selectively'],
+          ['weak-fit', 'Weak Fit'],
+          ['skip', 'Skip'],
+        ].map(([val, lbl]) => `
+          <button class="filter-pill verdict-pill ${val}${filters.verdict.has(val) ? ' active' : ''}"
+                  onclick="toggleFilter('verdict', '${val}')">${lbl}</button>
+        `).join('')}
+      </div>
+      <div class="filter-group">
+        <span class="filter-group-label">Status</span>
+        ${Object.entries(STATUS_LABELS).map(([val, lbl]) => `
+          <button class="filter-pill status-pill ${val}${filters.status.has(val) ? ' active' : ''}"
+                  onclick="toggleFilter('status', '${val}')">${lbl}</button>
+        `).join('')}
+      </div>
+    `;
+
+    const container = document.getElementById('queue-container');
+
+    if (filtered.length === 0) {
+      const msg = queue.length === 0
+        ? `No roles in the pipeline yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.`
+        : `No roles match the current filters.`;
+      container.innerHTML = `<div class="queue-empty">${msg}</div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <table class="pipeline-table">
+        <thead>
+          <tr>
+            <th>Company</th>
+            <th>Role</th>
+            <th>Score</th>
+            <th>Verdict</th>
+            <th>Interest</th>
+            <th>Status</th>
+            <th>Added</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.map(e => `
+            <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
+              <td class="col-company">${escHtml(e.company)}</td>
+              <td class="col-role">${escHtml(e.role)}</td>
+              <td class="col-score ${getVerdictClass(e.total)}">${e.total}</td>
+              <td class="col-verdict">${getVerdictLabel(e.total)}</td>
+              <td class="col-interest">${e.interest ? interestBadge(e.interest) : '—'}</td>
+              <td class="col-status">${statusBadge(e.status)}</td>
+              <td class="col-added">${formatDate(e.addedAt)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  }
+
+  // ── DRAWER ────────────────────────────────────────────────────────────────
+
+  function openDrawer(id) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry) return;
+    pipelineState.activeId = id;
+
+    const dimLabels = { 1: 'Technical Fit', 2: 'Environment & Culture', 3: 'Comp & FIRE', 4: 'Learning Trajectory' };
+
+    document.getElementById('drawer-inner').innerHTML = `
+      <div class="drawer-header">
+        <div class="drawer-header-meta">
+          <div class="drawer-company">${escHtml(entry.company)}</div>
+          <div class="drawer-role">${escHtml(entry.role)}</div>
+        </div>
+        <button class="drawer-close" onclick="closeDrawer()">✕</button>
+      </div>
+
+      ${entry.url ? `<a class="drawer-url" href="${escHtml(entry.url)}" target="_blank" rel="noopener">↗ View posting</a>` : ''}
+
+      <div class="drawer-section">
+        <div class="drawer-section-label">Interest</div>
+        <div class="drawer-interest-options">
+          ${Object.entries(INTEREST_LABELS).map(([val, lbl]) => `
+            <button class="interest-btn${entry.interest === val ? ' active' : ''}"
+                    data-level="${val}"
+                    onclick="updateInterest('${id}', '${val}', this)">${lbl}</button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div class="drawer-section-label">Status</div>
+        <div class="drawer-status-options">
+          ${Object.entries(STATUS_LABELS).map(([val, lbl]) => `
+            <button class="status-option-btn${(entry.status || 'bookmarked') === val ? ' active' : ''}"
+                    data-status="${val}"
+                    onclick="updateStatus('${id}', '${val}', this)">${lbl}</button>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div class="drawer-section-label">Score</div>
+        <div class="drawer-score-row">
+          <span class="drawer-total ${getVerdictClass(entry.total)}">${entry.total}</span>
+          <span class="drawer-verdict">${getVerdictLabel(entry.total)}</span>
+        </div>
+        <div class="drawer-dims">
+          ${CONTENT.sections.map(s => `
+            <div class="drawer-dim">
+              <span class="drawer-dim-label">${dimLabels[s.id]}</span>
+              <span class="drawer-dim-score">${entry.weighted[s.id]} <span class="drawer-dim-max">/ ${s.weight}</span></span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      ${entry.reasoning && Object.keys(entry.reasoning).length ? `
+        <div class="drawer-section">
+          <div class="drawer-section-label">AI Reasoning</div>
+          ${CONTENT.sections.map(s => entry.reasoning[s.id] ? `
+            <div class="drawer-reasoning-block">
+              <div class="drawer-reasoning-dim">${dimLabels[s.id]}</div>
+              <div class="drawer-reasoning-text">${escHtml(entry.reasoning[s.id])}</div>
+            </div>
+          ` : '').join('')}
+        </div>
+      ` : ''}
+
+      ${entry.notes ? `
+        <div class="drawer-section">
+          <div class="drawer-section-label">Notes</div>
+          <div class="drawer-notes">${escHtml(entry.notes)}</div>
+        </div>
+      ` : ''}
+
+      <div class="drawer-section drawer-actions">
+        <button class="qcb-confirm" onclick="removeFromQueue('${entry.id}')">Remove from pipeline</button>
+      </div>
+    `;
+
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawer-backdrop').classList.add('open');
+
+    // highlight active row
+    renderSummary();
+    renderTable();
+  }
+
+  function closeDrawer() {
+    pipelineState.activeId = null;
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawer-backdrop').classList.remove('open');
+    renderSummary();
+    renderTable();
+  }
+
+  async function updateInterest(id, level, btn) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry) return;
+    entry.interest = level;
+    btn.closest('.drawer-interest-options').querySelectorAll('.interest-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSummary();
+    renderTable();
+    await patchEntry(id, { interest: level });
+  }
+
+  async function updateStatus(id, status, btn) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry) return;
+    entry.status = status;
+    btn.closest('.drawer-status-options').querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSummary();
+    renderTable();
+    await patchEntry(id, { status });
+  }
+
+  async function patchEntry(id, patch) {
+    try {
+      await fetch(`/api/queue/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(patch),
+      });
+    } catch (err) {
+      console.error('patchEntry failed:', err);
+      showToast('Failed to save change');
+    }
+  }
+
+  // ── QUEUE MUTATIONS ───────────────────────────────────────────────────────
+
+  const INTEREST_LEVELS = ['not-interested', 'backburner', 'under-consideration', 'interested'];
+  let currentInterest = 'interested';
+
+  function setInterest(btn, level) {
+    currentInterest = level;
+    document.querySelectorAll('.interest-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function resetInterest() {
+    currentInterest = 'interested';
+    document.querySelectorAll('.interest-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.level === 'interested');
+    });
   }
 
   async function addToQueue() {
@@ -436,6 +801,7 @@
       weighted,
       reasoning: lastEvalResult.reasoning,
       interest:  currentInterest,
+      status:    'bookmarked',
       notes:     document.getElementById('notes').value.trim(),
       addedAt:   new Date().toISOString(),
     };
@@ -448,8 +814,9 @@
       });
       if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
       const saved = await res.json();
-      queue.push(saved);
-      renderQueue();
+      pipelineState.queue.push(saved);
+      renderSummary();
+      renderTable();
       showToast(`${saved.company} · ${saved.role} added to pipeline`);
       resetInterest();
       resetAll();
@@ -463,93 +830,13 @@
     try {
       const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`DELETE /api/queue/${id} ${res.status}`);
-      queue = queue.filter(e => e.id !== id);
-      renderQueue();
+      pipelineState.queue = pipelineState.queue.filter(e => e.id !== id);
+      if (pipelineState.activeId === id) closeDrawer();
+      renderSummary();
+      renderTable();
     } catch (err) {
       console.error('removeFromQueue failed:', err);
       showToast('Failed to remove — please try again');
-    }
-  }
-
-  function renderQueue() {
-    const sort   = document.getElementById('queue-sort-select').value;
-    const sorted = [...queue].sort((a, b) => {
-      if (sort === 'score-desc') return b.total - a.total;
-      if (sort === 'score-asc')  return a.total - b.total;
-      if (sort === 'added-desc') return new Date(b.addedAt) - new Date(a.addedAt);
-      if (sort === 'added-asc')  return new Date(a.addedAt) - new Date(b.addedAt);
-      return 0;
-    });
-
-    document.getElementById('queue-count').textContent = `${queue.length} role${queue.length !== 1 ? 's' : ''}`;
-    document.getElementById('queue-clear-btn').classList.toggle('visible', queue.length > 0);
-
-    const container = document.getElementById('queue-container');
-    if (sorted.length === 0) {
-      container.innerHTML = `<div class="queue-empty">No roles queued yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.</div>`;
-      return;
-    }
-
-    const dimLabels = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.title.split(' ')[0]]));
-    container.innerHTML = `<div class="queue-grid">${sorted.map(e => `
-      <div class="queue-card">
-        <div class="queue-card-top">
-          <div>
-            <div class="queue-card-company">${escHtml(e.company)}</div>
-            <div class="queue-card-role">${escHtml(e.role)}</div>
-            ${e.interest ? interestBadge(e.interest) : ''}
-          </div>
-          <div>
-            <div class="queue-card-score ${getVerdictClass(e.total)}">${e.total}</div>
-            <div class="queue-card-verdict">${getVerdictLabel(e.total)}</div>
-          </div>
-        </div>
-        <div class="queue-card-breakdown">
-          ${CONTENT.sections.map(s => `<span class="qc-dim">${dimLabels[s.id]} ${e.weighted[s.id]}/${s.weight}</span>`).join('')}
-        </div>
-        ${e.notes ? `<div class="queue-card-notes">${escHtml(e.notes)}</div>` : ''}
-        <div class="queue-card-actions">
-          ${e.url ? `<a href="${escHtml(e.url)}" target="_blank" rel="noopener" class="qc-remove" style="text-decoration:none">↗ posting</a>` : ''}
-          <button class="qc-remove" onclick="removeFromQueue('${e.id}')">Remove</button>
-        </div>
-      </div>
-    `).join('')}</div>`;
-  }
-
-  function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  let toastTimer;
-  function showToast(msg) {
-    const toast = document.getElementById('queue-toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
-  }
-
-  function promptClearQueue() {
-    document.getElementById('queue-confirm-bar').classList.add('visible');
-    document.getElementById('queue-clear-btn').style.display = 'none';
-  }
-
-  function cancelClearQueue() {
-    document.getElementById('queue-confirm-bar').classList.remove('visible');
-    document.getElementById('queue-clear-btn').style.display = '';
-  }
-
-  async function confirmClearQueue() {
-    try {
-      const res = await fetch('/api/queue', { method: 'DELETE' });
-      if (!res.ok) throw new Error(`DELETE /api/queue ${res.status}`);
-      queue = [];
-      document.getElementById('queue-confirm-bar').classList.remove('visible');
-      renderQueue();
-      showToast('Pipeline cleared');
-    } catch (err) {
-      console.error('confirmClearQueue failed:', err);
-      showToast('Failed to clear — please try again');
     }
   }
 

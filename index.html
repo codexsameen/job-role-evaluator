@@ -31,16 +31,22 @@
       <div class="queue-title">Pipeline</div>
       <div class="queue-count" id="queue-count">0 roles</div>
       <div class="queue-sort">
-        <span class="queue-sort-label">Sort by</span>
-        <select id="queue-sort-select" onchange="renderQueue()">
-          <option value="score-desc">Score ↓</option>
-          <option value="score-asc">Score ↑</option>
+        <span class="queue-sort-label">Sort</span>
+        <select id="queue-sort-select" onchange="renderTable()">
           <option value="added-desc">Added ↓</option>
           <option value="added-asc">Added ↑</option>
+          <option value="score-desc">Score ↓</option>
+          <option value="score-asc">Score ↑</option>
         </select>
       </div>
       <button class="queue-clear-btn" id="queue-clear-btn" onclick="promptClearQueue()">Clear all</button>
     </div>
+    <!-- Summary bar -->
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar"></div>
+
     <div class="queue-confirm-bar" id="queue-confirm-bar">
       <span>Clear all roles from the pipeline? This cannot be undone.</span>
       <button class="qcb-cancel" onclick="cancelClearQueue()">Cancel</button>
@@ -49,6 +55,12 @@
     <div id="queue-container">
       <div class="queue-empty">No roles queued yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.</div>
     </div>
+  </div>
+
+  <!-- Detail drawer -->
+  <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-inner" id="drawer-inner"></div>
   </div>
 
   <!-- JD input -->
