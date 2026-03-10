@@ -456,7 +456,6 @@
           <tr>
             <th>Company</th>
             <th>Role</th>
-            <th>Eval</th>
             <th>Score</th>
             <th>Verdict</th>
             <th>Interest</th>
@@ -469,7 +468,6 @@
             <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
               <td class="col-company">${escHtml(e.company)}</td>
               <td class="col-role">${escHtml(e.role)}</td>
-              <td class="col-eval">${evalStatusBadge(e.evalStatus)}</td>
               <td class="col-score ${e.evalStatus === 'pending' ? '' : getVerdictClass(e.total)}">${e.evalStatus === 'pending' ? '—' : e.total}</td>
               <td class="col-verdict">${e.evalStatus === 'pending' ? '' : getVerdictLabel(e.total)}</td>
               <td class="col-interest">${e.interest ? interestBadge(e.interest) : '—'}</td>
@@ -550,19 +548,11 @@
           <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
         </div>
         <div class="drawer-dims">
-          ${CONTENT.sections.map(s => {
-            const pct = s.weight > 0 ? Math.round((entry.weighted[s.id] / s.weight) * 100) : 0;
-            return `
+          ${CONTENT.sections.map(s => `
             <div class="drawer-dim">
-              <div class="drawer-dim-header">
-                <span class="drawer-dim-label">${dimLabels[s.id]}</span>
-                <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
-              </div>
-              <div class="drawer-dim-track">
-                <div class="drawer-dim-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
-              </div>
-            </div>`;
-          }).join('')}
+              <span class="drawer-dim-label">${dimLabels[s.id]}</span>
+              <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
+            </div>`).join('')}
         </div>` : ''}
       </div>
 
