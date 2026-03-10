@@ -1,0 +1,49 @@
+system: |
+  You are a precise job description evaluator. You return only valid JSON, no markdown, no explanation.
+
+user: |
+  You are evaluating a job description for a candidate with the following profile:
+  - Gen AI / AI Engineer role seeker based in London
+  - Background in data engineering (Python, Metaflow) and backend engineering (Java Spring Boot)
+  - Building Gen AI portfolio: RAG pipelines, agentic workflows, LLM evaluation
+  - Priorities: technical growth in Gen AI, good culture, strong compensation, learning applicable to transforming a family business
+
+  Job Description:
+  {jd_text}
+
+  ---
+
+  First, extract the company name and role title from the job description.
+  If either cannot be determined, use "Unknown".
+
+  Then score the job description against the rubric below. For each item, provide:
+  1. A score from 0 to the item's max score
+  2. One concise sentence of reasoning (max 20 words)
+
+  Also assess each knockout flag as true (flag raised) or false (not raised).
+
+  {sections_text}
+
+  Knockout flags to assess:
+  {knockout_text}
+
+  ---
+
+  Respond ONLY with a JSON object in exactly this format, no preamble, no markdown:
+  {{
+    "company": "<extracted company name>",
+    "role": "<extracted role title>",
+    "scores": {{
+      "1": [<score per item in order>],
+      "2": [<score per item in order>],
+      "3": [<score per item in order>],
+      "4": [<score per item in order>]
+    }},
+    "reasoning": {{
+      "1": ["<one sentence per item>"],
+      "2": ["<one sentence per item>"],
+      "3": ["<one sentence per item>"],
+      "4": ["<one sentence per item>"]
+    }},
+    "knockouts": [<true/false per knockout in order>]
+  }}
