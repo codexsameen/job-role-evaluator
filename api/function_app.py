@@ -103,21 +103,17 @@ def fetch_jd_from_url(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 def load_content():
-    import glob
     base = os.path.dirname(__file__)
     candidates = [
-        os.path.join(base, '..', 'content.json'),
         os.path.join(base, 'content.json'),
-        '/home/site/wwwroot/content.json',
-        '/home/site/wwwroot/api/content.json',
+        os.path.join(base, '..', 'content.json'),
     ]
     for path in candidates:
         path = os.path.abspath(path)
         if os.path.exists(path):
             with open(path) as f:
                 return json.load(f)
-    listing = glob.glob('/home/site/**/*content*', recursive=True)
-    raise FileNotFoundError(f"content.json not found. Tried: {candidates}. Found: {listing}")
+    raise FileNotFoundError(f"content.json not found. Tried: {candidates}")
 
 def load_prompt_template():
     base = os.path.dirname(__file__)
