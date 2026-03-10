@@ -296,36 +296,10 @@
 
   // ── EVALUATION ────────────────────────────────────────────────────────────
 
-  const EVAL_STEPS = [
-    { msg: 'Reading job description...',            delay: 0    },
-    { msg: 'Scoring technical fit...',              delay: 4000 },
-    { msg: 'Assessing culture signals...',          delay: 8000 },
-    { msg: 'Calculating compensation alignment...', delay: 13000 },
-    { msg: 'Finalising scores...',                  delay: 18000 },
-  ];
-
-  let evalStepTimers = [];
-
-  function showEvalOverlay() {
-    document.getElementById('eval-overlay').classList.add('visible');
-    const statusEl = document.getElementById('eval-status');
-    statusEl.textContent = EVAL_STEPS[0].msg;
-
-    evalStepTimers = EVAL_STEPS.slice(1).map(step =>
-      setTimeout(() => {
-        statusEl.classList.add('fade');
-        setTimeout(() => {
-          statusEl.textContent = step.msg;
-          statusEl.classList.remove('fade');
-        }, 300);
-      }, step.delay)
-    );
-  }
-
-  function hideEvalOverlay() {
-    evalStepTimers.forEach(clearTimeout);
-    evalStepTimers = [];
-    document.getElementById('eval-overlay').classList.remove('visible');
+  function evalStatusBadge(status) {
+    if (status === 'pending') return '<span class="eval-badge eval-pending">Awaiting</span>';
+    if (status === 'error')   return '<span class="eval-badge eval-error">Error</span>';
+    return '<span class="eval-badge eval-done">Evaluated</span>';
   }
 
   function applyEvaluation(result) {
@@ -378,6 +352,25 @@
 
   let lastEvalResult = null;
 
+  function computeWeightedTotal() {
+    const actualMax = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+    items.forEach(item => {
+      actualMax[parseInt(item.dataset.section)] += parseInt(item.dataset.max);
+    });
+    const sectScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+    items.forEach((item, i) => {
+      sectScores[parseInt(item.dataset.section)] += itemScores[i];
+    });
+    const weighted = {};
+    CONTENT.sections.forEach(s => {
+      weighted[s.id] = actualMax[s.id] > 0
+        ? Math.round((sectScores[s.id] / actualMax[s.id]) * maxScores[s.id])
+        : 0;
+    });
+    const total = Object.values(weighted).reduce((a, b) => a + b, 0);
+    return { weighted, total };
+  }
+
   async function runEvaluation() {
     const jdText = document.getElementById('jd-text').value.trim();
     const url    = document.getElementById('jd-url').value.trim();
@@ -387,29 +380,85 @@
       return;
     }
 
-    const btn = document.getElementById('evaluate-btn');
-    btn.disabled = true;
-    showEvalOverlay();
+    const capturedInterest = currentInterest;
+    const capturedNotes    = document.getElementById('notes').value.trim();
 
+    // 1. POST pending entry immediately
+    const pendingPayload = {
+      company:    '—',
+      role:       'Evaluating…',
+      url:        url || '',
+      total:      0,
+      weighted:   Object.fromEntries(CONTENT.sections.map(s => [s.id, 0])),
+      reasoning:  {},
+      interest:   capturedInterest,
+      status:     'bookmarked',
+      notes:      capturedNotes,
+      addedAt:    new Date().toISOString(),
+      evalStatus: 'pending',
+    };
+
+    let pendingEntry;
+    try {
+      const res = await fetch('/api/queue', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(pendingPayload),
+      });
+      if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
+      pendingEntry = await res.json();
+    } catch (err) {
+      console.error('runEvaluation: failed to create pending entry', err);
+      showToast('Failed to queue role — please try again');
+      return;
+    }
+
+    pipelineState.queue.push(pendingEntry);
+    renderSummary();
+    renderTable();
+    showToast('Role queued for evaluation');
+
+    // 2. Run evaluation in background
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ jd_text: jdText, url }),
       });
-
       if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
       const result = await res.json();
 
-      hideEvalOverlay();
       lastEvalResult = result;
       applyEvaluation(result);
+
+      const { weighted, total } = computeWeightedTotal();
+      const patch = {
+        company:    result.company,
+        role:       result.role,
+        url:        result.url || url || '',
+        total,
+        weighted,
+        reasoning:  result.reasoning,
+        knockouts:  result.knockouts,
+        evalStatus: 'evaluated',
+      };
+      await patchEntry(pendingEntry.id, patch);
+      const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
+      if (entry) Object.assign(entry, patch);
+      renderSummary();
+      renderTable();
+
+      resetInterest();
+      resetAll();
     } catch (err) {
-      console.error('runEvaluation failed:', err);
-      hideEvalOverlay();
+      console.error('runEvaluation: evaluation failed', err);
+      const patch = { evalStatus: 'error' };
+      await patchEntry(pendingEntry.id, patch);
+      const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
+      if (entry) Object.assign(entry, patch);
+      renderSummary();
+      renderTable();
       showToast('Evaluation failed — please try again');
-    } finally {
-      btn.disabled = false;
     }
   }
 
@@ -653,7 +702,7 @@
 
     if (filtered.length === 0) {
       const msg = queue.length === 0
-        ? `No roles in the pipeline yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.`
+        ? `No roles in the pipeline yet.<br>Evaluate a role below to get started.`
         : `No roles match the current filters.`;
       container.innerHTML = `<div class="queue-empty">${msg}</div>`;
       return;
@@ -665,6 +714,7 @@
           <tr>
             <th>Company</th>
             <th>Role</th>
+            <th>Eval</th>
             <th>Score</th>
             <th>Verdict</th>
             <th>Interest</th>
@@ -677,8 +727,9 @@
             <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
               <td class="col-company">${escHtml(e.company)}</td>
               <td class="col-role">${escHtml(e.role)}</td>
-              <td class="col-score ${getVerdictClass(e.total)}">${e.total}</td>
-              <td class="col-verdict">${getVerdictLabel(e.total)}</td>
+              <td class="col-eval">${evalStatusBadge(e.evalStatus)}</td>
+              <td class="col-score ${e.evalStatus === 'pending' ? '' : getVerdictClass(e.total)}">${e.evalStatus === 'pending' ? '—' : e.total}</td>
+              <td class="col-verdict">${e.evalStatus === 'pending' ? '' : getVerdictLabel(e.total)}</td>
               <td class="col-interest">${e.interest ? interestBadge(e.interest) : '—'}</td>
               <td class="col-status">${statusBadge(e.status)}</td>
               <td class="col-added">${formatDate(e.addedAt)}</td>
@@ -737,11 +788,17 @@
       </div>
 
       <div class="drawer-section">
+        <div class="drawer-section-label">Evaluation</div>
+        ${evalStatusBadge(entry.evalStatus)}
+      </div>
+
+      <div class="drawer-section">
         <div class="drawer-section-label">Score</div>
         <div class="drawer-score-row">
-          <span class="drawer-total ${getVerdictClass(entry.total)}">${entry.total}</span>
-          <span class="drawer-verdict">${getVerdictLabel(entry.total)}</span>
+          <span class="drawer-total ${entry.evalStatus === 'pending' ? '' : getVerdictClass(entry.total)}">${entry.evalStatus === 'pending' ? '—' : entry.total}</span>
+          <span class="drawer-verdict">${entry.evalStatus === 'pending' ? '' : getVerdictLabel(entry.total)}</span>
         </div>
+        ${entry.evalStatus !== 'pending' ? `
         <div class="drawer-dims">
           ${CONTENT.sections.map(s => `
             <div class="drawer-dim">
@@ -749,7 +806,7 @@
               <span class="drawer-dim-score">${entry.weighted[s.id]} <span class="drawer-dim-max">/ ${s.weight}</span></span>
             </div>
           `).join('')}
-        </div>
+        </div>` : ''}
       </div>
 
       ${entry.reasoning && Object.keys(entry.reasoning).length ? `
@@ -842,61 +899,6 @@
     document.querySelectorAll('.interest-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.level === 'interested');
     });
-  }
-
-  async function addToQueue() {
-    if (!lastEvalResult) {
-      showToast('Evaluate a role first');
-      return;
-    }
-
-    const actualMax  = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
-    items.forEach(item => {
-      actualMax[parseInt(item.dataset.section)] += parseInt(item.dataset.max);
-    });
-    const sectScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
-    items.forEach((item, i) => {
-      sectScores[parseInt(item.dataset.section)] += itemScores[i];
-    });
-    const weighted = {};
-    CONTENT.sections.forEach(s => {
-      weighted[s.id] = actualMax[s.id] > 0
-        ? Math.round((sectScores[s.id] / actualMax[s.id]) * maxScores[s.id])
-        : 0;
-    });
-    const total = Object.values(weighted).reduce((a, b) => a + b, 0);
-
-    const payload = {
-      company:   lastEvalResult.company,
-      role:      lastEvalResult.role,
-      url:       lastEvalResult.url || '',
-      total,
-      weighted,
-      reasoning: lastEvalResult.reasoning,
-      interest:  currentInterest,
-      status:    'bookmarked',
-      notes:     document.getElementById('notes').value.trim(),
-      addedAt:   new Date().toISOString(),
-    };
-
-    try {
-      const res = await fetch('/api/queue', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
-      const saved = await res.json();
-      pipelineState.queue.push(saved);
-      renderSummary();
-      renderTable();
-      showToast(`${saved.company} · ${saved.role} added to pipeline`);
-      resetInterest();
-      resetAll();
-    } catch (err) {
-      console.error('addToQueue failed:', err);
-      showToast('Failed to save — please try again');
-    }
   }
 
   async function removeFromQueue(id) {

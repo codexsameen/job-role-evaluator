@@ -678,6 +678,12 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-offer      { border-color: var(--accent2); background: var(--accent2); color: #0e0e0e; }
 .status-rejected   { border-color: var(--danger);         color: var(--danger); }
 
+.eval-badge   { font-size: 10px; padding: 2px 6px; border-radius: 2px; border: 1px solid; letter-spacing: 0.06em; text-transform: uppercase; }
+.eval-pending { border-color: var(--accent);  color: var(--accent); }
+.eval-done    { border-color: var(--accent2); color: var(--accent2); }
+.eval-error   { border-color: var(--danger);  color: var(--danger); }
+.col-eval     { white-space: nowrap; }
+
 /* ── DRAWER ──────────────────────────────────────────────────────────────── */
 
 .drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(14,14,14,0.5); z-index: 300; }

@@ -221,6 +221,32 @@ def post_queue(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
+# PATCH /api/queue/{id}
+# ---------------------------------------------------------------------------
+@app.route(route="queue/{id}", methods=["PATCH"])
+def patch_queue_item(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    item_id = req.route_params.get("id")
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    try:
+        container = get_container()
+        item = container.read_item(item=item_id, partition_key=user_id)
+        item.update(body)
+        container.replace_item(item=item_id, body=item)
+        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Item not found", status_code=404)
+        logging.exception("PATCH /api/queue/{id} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
 # DELETE /api/queue/{id}
 # ---------------------------------------------------------------------------
 @app.route(route="queue/{id}", methods=["DELETE"])
