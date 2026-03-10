@@ -577,16 +577,27 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-option-btn[data-status="rejected"].active     { border-color: var(--danger);        color: var(--danger); }
 .status-option-btn.active { background: var(--surface); }
 
-.drawer-score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.drawer-score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
 .drawer-total   { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 600; line-height: 1; }
 .drawer-verdict { font-size: 12px; color: var(--muted); }
-.drawer-dims    { display: flex; flex-direction: column; gap: 6px; }
 
-.drawer-dim { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.drawer-total-track { height: 4px; background: var(--border); margin-bottom: 20px; overflow: hidden; }
+.drawer-total-fill  { height: 100%; transition: width 0.4s ease; }
+.drawer-total-fill.score-strong { background: var(--accent); }
+.drawer-total-fill.score-apply  { background: var(--accent2); }
+.drawer-total-fill.score-weak   { background: var(--t3); }
+.drawer-total-fill.score-pass   { background: var(--muted); }
+
+.drawer-dims { display: flex; flex-direction: column; gap: 10px; }
+
+.drawer-dim { padding: 8px 0; border-bottom: 1px solid var(--border); }
 .drawer-dim:last-child { border-bottom: none; }
+.drawer-dim-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
 .drawer-dim-label { color: var(--muted); font-size: 10px; letter-spacing: 0.05em; }
-.drawer-dim-score { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--text); }
+.drawer-dim-score { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--text); }
 .drawer-dim-max   { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.drawer-dim-track { height: 3px; background: var(--border); overflow: hidden; }
+.drawer-dim-fill  { height: 100%; background: var(--accent2); transition: width 0.4s ease; }
 
 .drawer-reasoning-block { margin-bottom: 14px; }
 .drawer-reasoning-dim   { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
@@ -610,11 +621,15 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .drawer-eval-section-title { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
 .drawer-eval-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
 .drawer-eval-item:last-child { border-bottom: none; }
-.drawer-eval-question { font-size: 11px; color: var(--text); line-height: 1.5; margin-bottom: 4px; }
-.drawer-eval-score-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 4px; }
-.drawer-eval-score { font-family: 'Fraunces', serif; font-size: 15px; color: var(--accent2); }
-.drawer-eval-max { font-size: 10px; color: var(--muted); }
-.drawer-eval-label { font-size: 10px; color: var(--muted); font-style: italic; }
+.drawer-eval-question { font-size: 11px; color: var(--text); line-height: 1.5; margin-bottom: 6px; }
+.drawer-eval-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.drawer-eval-bar-track { flex: 1; height: 6px; background: var(--border); overflow: hidden; }
+.drawer-eval-bar-fill { height: 100%; transition: width 0.4s ease; }
+.drawer-eval-bar-fill.low  { background: var(--danger); opacity: 0.7; }
+.drawer-eval-bar-fill.mid  { background: var(--accent); }
+.drawer-eval-bar-fill.high { background: var(--accent2); }
+.drawer-eval-score-num { font-family: 'Fraunces', serif; font-size: 12px; color: var(--text); flex-shrink: 0; }
+.drawer-eval-label { font-size: 10px; color: var(--muted); font-style: italic; flex-shrink: 0; }
 .drawer-eval-reasoning { font-size: 11px; color: var(--muted); line-height: 1.6; padding: 5px 8px; border-left: 2px solid var(--border); }
 
 /* Editable notes in drawer */

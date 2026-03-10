@@ -541,13 +541,23 @@
           <span class="drawer-verdict">${entry.evalStatus === 'pending' ? '' : getVerdictLabel(entry.total)}</span>
         </div>
         ${entry.evalStatus !== 'pending' ? `
+        <div class="drawer-total-track">
+          <div class="drawer-total-fill ${getVerdictClass(entry.total)}" style="width: ${entry.total}%"></div>
+        </div>
         <div class="drawer-dims">
-          ${CONTENT.sections.map(s => `
+          ${CONTENT.sections.map(s => {
+            const pct = s.weight > 0 ? Math.round((entry.weighted[s.id] / s.weight) * 100) : 0;
+            return `
             <div class="drawer-dim">
-              <span class="drawer-dim-label">${dimLabels[s.id]}</span>
-              <span class="drawer-dim-score">${entry.weighted[s.id]} <span class="drawer-dim-max">/ ${s.weight}</span></span>
-            </div>
-          `).join('')}
+              <div class="drawer-dim-header">
+                <span class="drawer-dim-label">${dimLabels[s.id]}</span>
+                <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
+              </div>
+              <div class="drawer-dim-track">
+                <div class="drawer-dim-fill" style="width: ${pct}%"></div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>` : ''}
       </div>
 
@@ -577,15 +587,19 @@
               <div class="drawer-eval-section">
                 <div class="drawer-eval-section-title">${escHtml(s.title)}</div>
                 ${s.items.map((item, i) => {
-                  const score  = secScores[i] ?? 0;
-                  const label  = item.labels?.[score] ?? String(score);
-                  const reason = secReason[i] || '';
+                  const score     = secScores[i] ?? 0;
+                  const label     = item.labels?.[score] ?? String(score);
+                  const reason    = secReason[i] || '';
+                  const pct       = item.max > 0 ? Math.round((score / item.max) * 100) : 0;
+                  const fillClass = score === 0 ? 'low' : score === item.max ? 'high' : 'mid';
                   return `
                     <div class="drawer-eval-item">
                       <div class="drawer-eval-question">${escHtml(item.question)}</div>
-                      <div class="drawer-eval-score-row">
-                        <span class="drawer-eval-score">${score}</span>
-                        <span class="drawer-eval-max">/ ${item.max}</span>
+                      <div class="drawer-eval-bar-wrap">
+                        <div class="drawer-eval-bar-track">
+                          <div class="drawer-eval-bar-fill ${fillClass}" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="drawer-eval-score-num">${score}/${item.max}</span>
                         <span class="drawer-eval-label">${escHtml(label)}</span>
                       </div>
                       ${reason ? `<div class="drawer-eval-reasoning">${escHtml(reason)}</div>` : ''}
