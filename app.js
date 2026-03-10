@@ -1,4 +1,18 @@
-// ── CONTENT ───────────────────────────────────────────────────────────────
+// ── THEME ─────────────────────────────────────────────────────────────────
+
+  function applyTheme(theme) {
+    document.body.classList.toggle('light', theme === 'light');
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = theme === 'light' ? '◑' : '◐';
+  }
+
+  function toggleTheme() {
+    const next = document.body.classList.contains('light') ? 'dark' : 'light';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  }
+
+  // ── CONTENT ───────────────────────────────────────────────────────────────
   let CONTENT = null;
 
   // ── RENDERER ─────────────────────────────────────────────────────────────
@@ -82,6 +96,7 @@
   // ── INIT ──────────────────────────────────────────────────────────────────
 
   async function init() {
+    applyTheme(localStorage.getItem('theme') || 'dark');
     try {
       const [content, queueData] = await Promise.all([
         fetch('./content.json').then(r => r.json()),

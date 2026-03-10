@@ -19,6 +19,59 @@
   --t4: #c8b8a8;
 }
 
+
+/* ── LIGHT THEME ─────────────────────────────────────────────────────────── */
+
+body.light {
+  --bg:       #f5f0e8;
+  --surface:  #ede8de;
+  --surface2: #e4ddd0;
+  --border:   #c8bfaa;
+  --text:     #1a1612;
+  --muted:    #7a7060;
+}
+
+/* Smooth transition on theme switch */
+body, body * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+
+/* Exceptions — things that should not transition */
+.progress-fill,
+.rating button,
+.eval-spinner { transition: none; }
+.progress-fill { transition: width 0.4s ease; }
+.rating button { transition: all 0.15s ease; }
+
+/* Light-specific overrides for hardcoded dark values */
+body.light .knockout-section  { background: #f0e0e0; border-color: #d4aaaa; }
+body.light .knockout-item     { border-bottom-color: #ddc8c8; }
+body.light .knockout-warning  { background: #eddada; }
+body.light .ko-check          { background: #f5ecec; border-color: #d4aaaa; }
+body.light .queue-confirm-bar { background: #f0e0e0; border-color: #d4aaaa; }
+body.light .item              { border-bottom-color: #d8d0c0; }
+body.light .queue-card-breakdown { border-top-color: #d8d0c0; }
+body.light .rating button     { background: var(--surface2); }
+
+/* Theme toggle button */
+.theme-toggle {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+}
+
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
 /* ── RESET & BASE ────────────────────────────────────────────────────────── */
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
