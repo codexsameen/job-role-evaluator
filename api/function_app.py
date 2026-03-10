@@ -2,10 +2,13 @@ import azure.functions as func
 import json
 import logging
 import os
+import re
 import uuid
 import yaml
 from datetime import datetime, timezone
 
+import httpx
+from bs4 import BeautifulSoup
 from openai import OpenAI
 
 from shared.auth import get_user_id
@@ -24,6 +27,75 @@ def get_openai_client():
             api_key=os.environ["OPENAI_API_KEY"],
         )
     return _openai_client
+
+
+# ---------------------------------------------------------------------------
+# JD fetch helper
+# ---------------------------------------------------------------------------
+
+_LINKEDIN_SELECTORS = [
+    "div.show-more-less-html__markup",
+    "div.description__text",
+]
+
+_GENERIC_SELECTORS = [
+    "main",
+    "article",
+    "[class*='job-description']",
+    "[class*='jobDescription']",
+    "[class*='job_description']",
+    "[id*='job-description']",
+    "[id*='jobDescription']",
+    "[class*='description']",
+]
+
+_FETCH_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-GB,en;q=0.9",
+}
+
+def _clean_text(text: str) -> str:
+    text = re.sub(r'\r\n|\r', '\n', text)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = re.sub(r'[ \t]{2,}', ' ', text)
+    return text.strip()
+
+def fetch_jd_from_url(url: str) -> str:
+    """
+    Fetch a job posting URL and return the job description as clean plain text.
+    Raises ValueError if nothing useful can be extracted.
+    Raises httpx.HTTPError on network / HTTP failures.
+    """
+    is_linkedin = "linkedin.com" in url
+
+    with httpx.Client(follow_redirects=True, timeout=15) as client:
+        response = client.get(url, headers=_FETCH_HEADERS)
+        response.raise_for_status()
+
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    for tag in soup(["script", "style", "nav", "header", "footer", "aside", "noscript"]):
+        tag.decompose()
+
+    selectors = _LINKEDIN_SELECTORS if is_linkedin else _GENERIC_SELECTORS
+    for selector in selectors:
+        el = soup.select_one(selector)
+        if el:
+            text = _clean_text(el.get_text(separator="\n"))
+            if len(text) > 200:
+                return text
+
+    body = soup.find("body")
+    if body:
+        text = _clean_text(body.get_text(separator="\n"))
+        if len(text) > 200:
+            return text
+
+    raise ValueError("Could not extract meaningful job description from URL")
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +269,39 @@ def delete_queue(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.exception("DELETE /api/queue failed")
         return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/fetch-jd
+# ---------------------------------------------------------------------------
+@app.route(route="fetch-jd", methods=["POST"])
+def fetch_jd(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    if user_id is None:
+        return func.HttpResponse("Unauthorized", status_code=401)
+
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    url = body.get("url", "").strip()
+    if not url:
+        return func.HttpResponse("url is required", status_code=400)
+
+    try:
+        text = fetch_jd_from_url(url)
+        return func.HttpResponse(
+            json.dumps({"text": text}),
+            status_code=200,
+            mimetype="application/json",
+        )
+    except ValueError as e:
+        logging.warning("JD extraction failed for %s: %s", url, e)
+        return func.HttpResponse(str(e), status_code=422)
+    except Exception as e:
+        logging.exception("fetch_jd failed for %s", url)
+        return func.HttpResponse(f"Failed to fetch URL: {e}", status_code=502)
 
 
 # ---------------------------------------------------------------------------
