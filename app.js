@@ -571,13 +571,13 @@
         </div>
       ` : ''}
 
-      ${entry.evalStatus === 'evaluated' && entry.scores ? `
+      ${entry.evalStatus === 'evaluated' ? `
         <div class="drawer-section">
           <div class="drawer-section-label">Evaluation Detail</div>
           ${CONTENT.sections.map(s => {
             const sid       = String(s.id);
-            const secScores = entry.scores[sid]    || [];
-            const secReason = entry.reasoning[sid] || [];
+            const secScores = (entry.scores?.[sid])    || [];
+            const secReason = (entry.reasoning?.[sid]) || [];
             return `
               <div class="drawer-eval-section">
                 <div class="drawer-eval-section-title">${escHtml(s.title)}</div>
@@ -589,6 +589,7 @@
                   return `
                     <div class="drawer-eval-item">
                       <div class="drawer-eval-question">${escHtml(item.question)}</div>
+                      ${reason ? `<div class="drawer-eval-reasoning">${escHtml(reason)}</div>` : ''}
                       <div class="drawer-eval-bar-wrap">
                         <div class="drawer-eval-bar-track">
                           <div class="drawer-eval-bar-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
@@ -596,7 +597,6 @@
                         <span class="drawer-eval-score-num">${score}/${item.max}</span>
                         <span class="drawer-eval-label">${escHtml(label)}</span>
                       </div>
-                      ${reason ? `<div class="drawer-eval-reasoning">${escHtml(reason)}</div>` : ''}
                     </div>`;
                 }).join('')}
               </div>`;
