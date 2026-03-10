@@ -21,6 +21,7 @@
     --t2: #a8c8b8;
     --t3: #b8a8c8;
     --t4: #c8b8a8;
+    --interest-blue: #6e8fc9;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -63,14 +64,9 @@
     margin-bottom: 12px;
   }
 
-  @media (max-width: 480px) {
-    h1 { font-size: 26px; }
-  }
+  @media (max-width: 480px) { h1 { font-size: 26px; } }
 
-  h1 em {
-    font-style: italic;
-    color: var(--accent);
-  }
+  h1 em { font-style: italic; color: var(--accent); }
 
   .subtitle {
     color: var(--muted);
@@ -87,11 +83,7 @@
   }
 
   @media (max-width: 480px) {
-    .dashboard {
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
+    .dashboard { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 24px; }
   }
 
   .score-card {
@@ -135,10 +127,7 @@
   .score-card:nth-child(3) .score-value { color: var(--t3); }
   .score-card:nth-child(4) .score-value { color: var(--t4); }
 
-  .score-max {
-    font-size: 11px;
-    color: var(--muted);
-  }
+  .score-max { font-size: 11px; color: var(--muted); }
 
   /* Total score */
   .total-bar {
@@ -212,9 +201,7 @@
   }
 
   /* Sections */
-  .section {
-    margin-bottom: 36px;
-  }
+  .section { margin-bottom: 36px; }
 
   .section-header {
     display: flex;
@@ -272,13 +259,8 @@
   .item:last-child { border-bottom: none; }
 
   @media (max-width: 480px) {
-    .item {
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
+    .item { grid-template-columns: 1fr; gap: 10px; }
   }
-
-  .item-left { }
 
   .item-question {
     color: var(--text);
@@ -293,9 +275,40 @@
     line-height: 1.5;
   }
 
-  .item-hint .signal {
-    color: var(--accent2);
+  .item-hint .signal { color: var(--accent2); }
+
+  /* Reasoning toggle */
+  .item-reasoning {
+    margin-top: 6px;
   }
+
+  .reasoning-toggle {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+  }
+
+  .reasoning-toggle:hover { color: var(--accent); }
+
+  .reasoning-text {
+    display: none;
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-left: 2px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .reasoning-text.visible { display: block; }
 
   /* Rating buttons */
   .rating {
@@ -322,17 +335,10 @@
 
   @media (max-width: 480px) {
     .rating { gap: 6px; }
-    .rating button {
-      width: 36px;
-      height: 36px;
-      font-size: 12px;
-    }
+    .rating button { width: 36px; height: 36px; font-size: 12px; }
   }
 
-  .rating button:hover {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
+  .rating button:hover { border-color: var(--accent); color: var(--accent); }
 
   .rating button.active {
     background: var(--accent);
@@ -341,20 +347,9 @@
     font-weight: 500;
   }
 
-  .rating button.active.low {
-    background: var(--danger);
-    border-color: var(--danger);
-  }
-
-  .rating button.active.mid {
-    background: var(--accent2);
-    border-color: var(--accent2);
-  }
-
-  .rating button.active.high {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
+  .rating button.active.low  { background: var(--danger);  border-color: var(--danger); }
+  .rating button.active.mid  { background: var(--accent2); border-color: var(--accent2); }
+  .rating button.active.high { background: var(--accent);  border-color: var(--accent); }
 
   /* Knockout flags */
   .knockout-section {
@@ -401,30 +396,11 @@
   }
 
   .ko-check:hover { border-color: var(--danger); }
+  .ko-check.flagged { background: var(--danger); border-color: var(--danger); }
+  .ko-check.flagged::after { content: '✕'; color: white; font-size: 10px; }
 
-  .ko-check.flagged {
-    background: var(--danger);
-    border-color: var(--danger);
-  }
-
-  .ko-check.flagged::after {
-    content: '✕';
-    color: white;
-    font-size: 10px;
-  }
-
-  .ko-label {
-    font-size: 12px;
-    color: var(--text);
-    line-height: 1.4;
-  }
-
-  .ko-label small {
-    display: block;
-    color: var(--muted);
-    font-size: 10px;
-    margin-top: 2px;
-  }
+  .ko-label { font-size: 12px; color: var(--text); line-height: 1.4; }
+  .ko-label small { display: block; color: var(--muted); font-size: 10px; margin-top: 2px; }
 
   .knockout-warning {
     margin-top: 12px;
@@ -470,7 +446,6 @@
   textarea:focus { border-color: var(--accent); }
   textarea::placeholder { color: var(--muted); }
 
-  /* Reset */
   .reset-btn {
     margin-top: 24px;
     padding: 10px 20px;
@@ -485,10 +460,7 @@
     transition: all 0.2s;
   }
 
-  .reset-btn:hover {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
 
   .save-btn {
     margin-top: 24px;
@@ -505,12 +477,71 @@
     transition: all 0.2s;
   }
 
-  .save-btn:hover {
-    background: var(--accent);
-    color: #0e0e0e;
+  .save-btn:hover { background: var(--accent); color: #0e0e0e; }
+
+  /* Interest badge on pipeline cards */
+  .interest-badge {
+    display: inline-block;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-top: 4px;
   }
 
-  /* Queue section */
+  .interest-badge.not-interested     { border-color: var(--danger);         color: var(--danger); }
+  .interest-badge.backburner         { border-color: var(--accent);         color: var(--accent); }
+  .interest-badge.under-consideration { border-color: var(--interest-blue);  color: var(--interest-blue); }
+  .interest-badge.interested         { border-color: var(--accent2);        color: var(--accent2); }
+
+  /* Interest selector */
+  .interest-row {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .interest-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .interest-options {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .interest-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .interest-btn[data-level="not-interested"]:hover         { border-color: var(--danger);         color: var(--danger); }
+  .interest-btn[data-level="not-interested"].active        { background: var(--danger);         border-color: var(--danger);         color: #0e0e0e; }
+  .interest-btn[data-level="backburner"]:hover             { border-color: var(--accent);         color: var(--accent); }
+  .interest-btn[data-level="backburner"].active            { background: var(--accent);         border-color: var(--accent);         color: #0e0e0e; }
+  .interest-btn[data-level="under-consideration"]:hover    { border-color: var(--interest-blue);  color: var(--interest-blue); }
+  .interest-btn[data-level="under-consideration"].active   { background: var(--interest-blue);  border-color: var(--interest-blue);  color: #0e0e0e; }
+  .interest-btn[data-level="interested"]:hover             { border-color: var(--accent2);        color: var(--accent2); }
+  .interest-btn[data-level="interested"].active            { background: var(--accent2);        border-color: var(--accent2);        color: #0e0e0e; }
+
+    /* Queue section */
   .queue-section {
     margin-bottom: 48px;
     border-bottom: 1px solid var(--border);
@@ -597,7 +628,6 @@
   }
 
   .queue-confirm-bar.visible { display: flex; }
-
   .queue-confirm-bar span { flex: 1; }
 
   .qcb-confirm {
@@ -772,10 +802,7 @@
     z-index: 100;
   }
 
-  .queue-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  .queue-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   /* Score colour helpers */
   .score-strong { color: var(--accent); }
@@ -794,11 +821,7 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .user-identity {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  .user-identity { display: flex; align-items: center; gap: 8px; }
 
   .user-avatar {
     width: 22px;
@@ -809,13 +832,7 @@
   }
 
   .user-avatar.loaded { display: block; }
-
-  .user-name {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-  }
-
+  .user-name { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
   .user-name span { color: var(--text); }
 
   .logout-btn {
@@ -835,18 +852,20 @@
 
   .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-  .role-input-row {
+  /* JD input area */
+  .jd-input-area {
     margin-bottom: 32px;
+  }
+
+  .jd-input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+    margin-bottom: 12px;
   }
 
   @media (max-width: 480px) {
-    .role-input-row {
-      grid-template-columns: 1fr;
-      margin-bottom: 24px;
-    }
+    .jd-input-row { grid-template-columns: 1fr; }
   }
 
   .field-group { display: flex; flex-direction: column; gap: 6px; }
@@ -871,6 +890,120 @@
 
   input[type="text"]:focus { border-color: var(--accent); }
   input[type="text"]::placeholder { color: var(--muted); }
+
+  .jd-textarea {
+    min-height: 140px;
+  }
+
+  .evaluate-btn {
+    margin-top: 12px;
+    padding: 12px 24px;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: #0e0e0e;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .evaluate-btn:hover { opacity: 0.85; }
+  .evaluate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Extracted meta */
+  .extracted-meta {
+    display: none;
+    margin-bottom: 32px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    gap: 24px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+
+  .extracted-meta.visible { display: flex; }
+
+  .extracted-company {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .extracted-role {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--text);
+  }
+
+  .extracted-url {
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    transition: color 0.15s;
+  }
+
+  .extracted-url:hover { color: var(--accent); }
+
+  /* Loading dialog */
+  .eval-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(14,14,14,0.92);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .eval-overlay.visible { display: flex; }
+
+  .eval-dialog {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 40px 48px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+  }
+
+  .eval-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .eval-status {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    min-height: 18px;
+    transition: opacity 0.3s ease;
+  }
+
+  .eval-status.fade { opacity: 0; }
+
+  .eval-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
 </style>
 </head>
 <body>
@@ -890,7 +1023,7 @@
     <a class="logout-btn" href="/.auth/logout">Log out</a>
   </div>
 
-  <!-- Queue section -->
+  <!-- Pipeline -->
   <div class="queue-section" id="queue-section">
     <div class="queue-header">
       <div class="queue-title">Pipeline</div>
@@ -912,19 +1045,32 @@
       <button class="qcb-confirm" onclick="confirmClearQueue()">Clear pipeline</button>
     </div>
     <div id="queue-container">
-      <div class="queue-empty">No roles queued yet.<br>Score a role below and click <strong>Add to Pipeline</strong>.</div>
+      <div class="queue-empty">No roles queued yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.</div>
     </div>
   </div>
 
-  <div class="role-input-row">
-    <div class="field-group">
-      <label class="field-label">Company</label>
-      <input type="text" id="company" placeholder="e.g. Eigen Technologies">
+  <!-- JD input -->
+  <div class="jd-input-area">
+    <div class="jd-input-row">
+      <div class="field-group">
+        <label class="field-label">Job Posting URL</label>
+        <input type="text" id="jd-url" placeholder="https://...  (optional, for reference)">
+      </div>
     </div>
     <div class="field-group">
-      <label class="field-label">Role Title</label>
-      <input type="text" id="role" placeholder="e.g. AI Engineer">
+      <label class="field-label">Job Description</label>
+      <textarea id="jd-text" class="jd-textarea" placeholder="Paste the full job description here..."></textarea>
     </div>
+    <button class="evaluate-btn" id="evaluate-btn" onclick="runEvaluation()">Evaluate Role</button>
+  </div>
+
+  <!-- Extracted company / role (shown after evaluation) -->
+  <div class="extracted-meta" id="extracted-meta">
+    <div>
+      <div class="extracted-company" id="extracted-company"></div>
+      <div class="extracted-role" id="extracted-role"></div>
+    </div>
+    <a class="extracted-url" id="extracted-url" target="_blank" rel="noopener"></a>
   </div>
 
   <!-- Knockout flags -->
@@ -940,6 +1086,15 @@
   <div class="notes-area">
     <div class="notes-label">Notes</div>
     <textarea id="notes" placeholder="Gut feel, red flags, things to research, questions to ask in interview..."></textarea>
+    <div class="interest-row">
+      <span class="interest-label">Interest</span>
+      <div class="interest-options">
+        <button class="interest-btn" data-level="not-interested" onclick="setInterest(this, 'not-interested')">Not Interested</button>
+        <button class="interest-btn" data-level="backburner" onclick="setInterest(this, 'backburner')">Backburner</button>
+        <button class="interest-btn" data-level="under-consideration" onclick="setInterest(this, 'under-consideration')">Under Consideration</button>
+        <button class="interest-btn active" data-level="interested" onclick="setInterest(this, 'interested')">Interested</button>
+      </div>
+    </div>
     <br>
     <button class="reset-btn" onclick="resetAll()">Reset Evaluator</button>
     <button class="save-btn" onclick="addToQueue()">+ Add to Pipeline</button>
@@ -947,10 +1102,19 @@
 
 </div>
 
+<!-- Loading overlay -->
+<div class="eval-overlay" id="eval-overlay">
+  <div class="eval-dialog">
+    <div class="eval-spinner"></div>
+    <div class="eval-title">Evaluating Role</div>
+    <div class="eval-status" id="eval-status">Reading job description...</div>
+  </div>
+</div>
+
 <div class="queue-toast" id="queue-toast"></div>
 
 <script>
-  // ── CONTENT CONFIG ───────────────────────────────────────────────────────
+  // ── CONTENT ───────────────────────────────────────────────────────────────
   let CONTENT = null;
 
   // ── RENDERER ─────────────────────────────────────────────────────────────
@@ -958,12 +1122,12 @@
   function renderEvaluator(content = null) {
     const cfg = content || CONTENT;
     if (!cfg) return;
-    document.querySelector('.eyebrow').textContent = cfg.meta.eyebrow;
-    document.querySelector('h1').innerHTML = cfg.meta.title;
+    document.querySelector('.eyebrow').textContent  = cfg.meta.eyebrow;
+    document.querySelector('h1').innerHTML          = cfg.meta.title;
     document.querySelector('.subtitle').textContent = cfg.meta.subtitle;
 
-    const koMount = document.getElementById('knockout-mount');
-    koMount.innerHTML = `
+    // Knockouts
+    document.getElementById('knockout-mount').innerHTML = `
       <div class="knockout-section">
         <div class="knockout-title">⚠ Knockout Flags — check any that apply</div>
         ${cfg.knockouts.map(ko => `
@@ -977,9 +1141,9 @@
         </div>
       </div>`;
 
-    const dashMount = document.getElementById('dashboard-mount');
+    // Dashboard
     const dashLabels = { 1: 'Technical Fit', 2: 'Environment & Culture', 3: 'Comp & FIRE', 4: 'Learning Trajectory' };
-    dashMount.innerHTML = `
+    document.getElementById('dashboard-mount').innerHTML = `
       <div class="dashboard">
         ${cfg.sections.map(s => `
           <div class="score-card">
@@ -998,19 +1162,19 @@
         </div>
         <div class="verdict">
           <strong id="verdict-label">—</strong>
-          <span id="verdict-sub">Score the role to see a recommendation</span>
+          <span id="verdict-sub">Paste a job description above and click Evaluate.</span>
         </div>
       </div>`;
 
-    const sectMount = document.getElementById('sections-mount');
-    sectMount.innerHTML = cfg.sections.map(s => `
+    // Sections
+    document.getElementById('sections-mount').innerHTML = cfg.sections.map(s => `
       <div class="section s${s.id}">
         <div class="section-header">
           <div class="section-title">${s.title}</div>
           <div class="section-weight">Weight: ${s.weight}pts</div>
           <div class="section-score-inline" id="s${s.id}-inline">0/${s.weight}</div>
         </div>
-        ${s.items.map(item => {
+        ${s.items.map((item, idx) => {
           const btns = Array.from({ length: item.max + 1 }, (_, i) => {
             const label = item.labels ? item.labels[i] : String(i);
             return `<button onclick="rate(this,${i})" title="${label}">${i}</button>`;
@@ -1020,6 +1184,10 @@
               <div class="item-left">
                 <div class="item-question">${item.question}</div>
                 <div class="item-hint">Signals: <span class="signal">${item.signals}</span></div>
+                <div class="item-reasoning">
+                  <button class="reasoning-toggle" onclick="toggleReasoning(this)" style="display:none">▸ reasoning</button>
+                  <div class="reasoning-text"></div>
+                </div>
               </div>
               <div class="rating">${btns}</div>
             </div>`;
@@ -1027,7 +1195,7 @@
       </div>`).join('');
   }
 
-  // ── ASYNC INIT ────────────────────────────────────────────────────────────
+  // ── INIT ──────────────────────────────────────────────────────────────────
 
   async function init() {
     try {
@@ -1036,11 +1204,10 @@
         fetch('/api/queue').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
 
-      CONTENT = content;
-      queue = queueData || [];
-
-      maxScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.weight]));
-      scores    = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+      CONTENT    = content;
+      queue      = queueData || [];
+      maxScores  = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.weight]));
+      scores     = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
 
       renderEvaluator(content);
 
@@ -1063,7 +1230,7 @@
       if (!user) return;
       document.getElementById('user-name').innerHTML = `logged in as <span>${user.userDetails}</span>`;
       const avatar = document.getElementById('user-avatar');
-      avatar.src = `https://github.com/${user.userDetails}.png?size=44`;
+      avatar.src   = `https://github.com/${user.userDetails}.png?size=44`;
       avatar.onload = () => avatar.classList.add('loaded');
     })
     .catch(() => {});
@@ -1073,18 +1240,18 @@
   let maxScores, scores, items, itemScores;
 
   function rate(btn, val) {
-    const item = btn.closest('.item');
-    const allBtns = item.querySelectorAll('button');
-    const idx = Array.from(items).indexOf(item);
-    const max = parseInt(item.dataset.max);
+    const item    = btn.closest('.item');
+    const allBtns = item.querySelectorAll('.rating button');
+    const idx     = Array.from(items).indexOf(item);
+    const max     = parseInt(item.dataset.max);
 
     allBtns.forEach((b, i) => {
       b.classList.remove('active', 'low', 'mid', 'high');
       if (i === val) {
         b.classList.add('active');
-        if (val === 0) b.classList.add('low');
-        else if (val < max) b.classList.add('mid');
-        else b.classList.add('high');
+        if (val === 0)       b.classList.add('low');
+        else if (val < max)  b.classList.add('mid');
+        else                 b.classList.add('high');
       }
     });
 
@@ -1113,21 +1280,21 @@
     const total = Object.values(weighted).reduce((a, b) => a + b, 0);
 
     CONTENT.sections.forEach(s => {
-      document.getElementById(`s${s.id}-val`).textContent = weighted[s.id];
+      document.getElementById(`s${s.id}-val`).textContent    = weighted[s.id];
       document.getElementById(`s${s.id}-inline`).textContent = `${weighted[s.id]}/${s.weight}`;
     });
-    document.getElementById('total-val').textContent = total;
-    document.getElementById('progress-fill').style.width = total + '%';
+    document.getElementById('total-val').textContent        = total;
+    document.getElementById('progress-fill').style.width    = total + '%';
 
     let label, sub;
-    if (total >= 80)      { label = 'Strong Apply';       sub = 'High alignment across all dimensions. Prioritise this application.'; }
-    else if (total >= 65) { label = 'Apply';               sub = 'Good fit with some gaps. Worth the investment.'; }
-    else if (total >= 50) { label = 'Apply Selectively';   sub = 'Reasonable fit but notable gaps. Investigate before applying.'; }
-    else if (total >= 35) { label = 'Weak Fit';            sub = 'Significant misalignment. Apply only if options are limited.'; }
-    else                  { label = 'Pass';                sub = 'Poor fit across multiple dimensions.'; }
+    if      (total >= 80) { label = 'Strong Apply';     sub = 'High alignment across all dimensions. Prioritise this application.'; }
+    else if (total >= 65) { label = 'Apply';             sub = 'Good fit with some gaps. Worth the investment.'; }
+    else if (total >= 50) { label = 'Apply Selectively'; sub = 'Reasonable fit but notable gaps. Investigate before applying.'; }
+    else if (total >= 35) { label = 'Weak Fit';          sub = 'Significant misalignment. Apply only if options are limited.'; }
+    else                  { label = 'Pass';              sub = 'Poor fit across multiple dimensions.'; }
 
     document.getElementById('verdict-label').textContent = label;
-    document.getElementById('verdict-sub').textContent = sub;
+    document.getElementById('verdict-sub').textContent   = sub;
   }
 
   function toggleKO(el) {
@@ -1136,22 +1303,194 @@
     document.getElementById('ko-warning').classList.toggle('visible', anyFlagged);
   }
 
+  function toggleReasoning(btn) {
+    const text = btn.nextElementSibling;
+    const open = text.classList.toggle('visible');
+    btn.textContent = open ? '▾ reasoning' : '▸ reasoning';
+  }
+
+  // ── EVALUATION ────────────────────────────────────────────────────────────
+
+  const EVAL_STEPS = [
+    { msg: 'Reading job description...',          delay: 0    },
+    { msg: 'Scoring technical fit...',            delay: 4000 },
+    { msg: 'Assessing culture signals...',        delay: 8000 },
+    { msg: 'Calculating compensation alignment...', delay: 13000 },
+    { msg: 'Finalising scores...',                delay: 18000 },
+  ];
+
+  let evalStepTimers = [];
+
+  function showEvalOverlay() {
+    document.getElementById('eval-overlay').classList.add('visible');
+    const statusEl = document.getElementById('eval-status');
+    statusEl.textContent = EVAL_STEPS[0].msg;
+
+    evalStepTimers = EVAL_STEPS.slice(1).map(step =>
+      setTimeout(() => {
+        statusEl.classList.add('fade');
+        setTimeout(() => {
+          statusEl.textContent = step.msg;
+          statusEl.classList.remove('fade');
+        }, 300);
+      }, step.delay)
+    );
+  }
+
+  function hideEvalOverlay() {
+    evalStepTimers.forEach(clearTimeout);
+    evalStepTimers = [];
+    document.getElementById('eval-overlay').classList.remove('visible');
+  }
+
+  function applyEvaluation(result) {
+    // Pre-fill extracted company / role
+    document.getElementById('extracted-company').textContent = result.company;
+    document.getElementById('extracted-role').textContent    = result.role;
+    const urlEl = document.getElementById('extracted-url');
+    if (result.url) {
+      urlEl.href        = result.url;
+      urlEl.textContent = '↗ view posting';
+    } else {
+      urlEl.textContent = '';
+    }
+    document.getElementById('extracted-meta').classList.add('visible');
+
+    // Pre-fill knockout checkboxes
+    const koChecks = document.querySelectorAll('.ko-check');
+    result.knockouts.forEach((flagged, i) => {
+      if (koChecks[i]) koChecks[i].classList.toggle('flagged', flagged);
+    });
+    const anyFlagged = result.knockouts.some(Boolean);
+    document.getElementById('ko-warning').classList.toggle('visible', anyFlagged);
+
+    // Pre-fill rating buttons and reasoning
+    let itemIdx = 0;
+    CONTENT.sections.forEach(s => {
+      const sid        = String(s.id);
+      const rawScores  = result.scores[sid]    || [];
+      const rawReason  = result.reasoning[sid] || [];
+
+      s.items.forEach((_, i) => {
+        const score      = rawScores[i] !== undefined ? rawScores[i] : 0;
+        const reasonText = rawReason[i] || '';
+        const item       = items[itemIdx];
+
+        if (item) {
+          // Set rating button
+          const btn = item.querySelectorAll('.rating button')[score];
+          if (btn) rate(btn, score);
+
+          // Set reasoning
+          if (reasonText) {
+            const toggle = item.querySelector('.reasoning-toggle');
+            const text   = item.querySelector('.reasoning-text');
+            toggle.style.display  = '';
+            text.textContent      = reasonText;
+          }
+        }
+        itemIdx++;
+      });
+    });
+
+    // Scroll to scoring area
+    document.getElementById('knockout-mount').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Store last evaluation result for addToQueue
+  let lastEvalResult = null;
+
+  async function runEvaluation() {
+    const jdText = document.getElementById('jd-text').value.trim();
+    if (!jdText) {
+      showToast('Paste a job description first');
+      return;
+    }
+
+    const btn = document.getElementById('evaluate-btn');
+    btn.disabled = true;
+    showEvalOverlay();
+
+    try {
+      const res = await fetch('/api/evaluate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          jd_text: jdText,
+          url:     document.getElementById('jd-url').value.trim(),
+        }),
+      });
+
+      if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
+      const result = await res.json();
+
+      hideEvalOverlay();
+      lastEvalResult = result;
+      applyEvaluation(result);
+    } catch (err) {
+      console.error('runEvaluation failed:', err);
+      hideEvalOverlay();
+      showToast('Evaluation failed — please try again');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── RESET ─────────────────────────────────────────────────────────────────
+
   function resetAll() {
     items.forEach((item, i) => {
       itemScores[i] = 0;
-      item.querySelectorAll('button').forEach(b => b.classList.remove('active','low','mid','high'));
+      item.querySelectorAll('.rating button').forEach(b => b.classList.remove('active','low','mid','high'));
+      const toggle = item.querySelector('.reasoning-toggle');
+      const text   = item.querySelector('.reasoning-text');
+      toggle.style.display = 'none';
+      text.textContent     = '';
+      text.classList.remove('visible');
     });
     document.querySelectorAll('.ko-check').forEach(el => el.classList.remove('flagged'));
     document.getElementById('ko-warning').classList.remove('visible');
-    document.getElementById('notes').value = '';
-    document.getElementById('company').value = '';
-    document.getElementById('role').value = '';
+    document.getElementById('notes').value    = '';
+    document.getElementById('jd-url').value   = '';
+    document.getElementById('jd-text').value  = '';
+    document.getElementById('extracted-meta').classList.remove('visible');
+    lastEvalResult = null;
+    resetInterest();
     recalc();
   }
 
   // ── QUEUE ─────────────────────────────────────────────────────────────────
 
   let queue = [];
+
+  const INTEREST_LABELS = {
+    'not-interested':      'Not Interested',
+    'backburner':          'Backburner',
+    'under-consideration': 'Under Consideration',
+    'interested':          'Interested',
+  };
+
+  function interestBadge(level) {
+    const label = INTEREST_LABELS[level] || level;
+    return `<div class="interest-badge ${level}">${label}</div>`;
+  }
+
+  const INTEREST_LEVELS = ['not-interested', 'considering', 'pursuing', 'interested'];
+  let currentInterest = 'interested';
+
+  function setInterest(btn, level) {
+    currentInterest = level;
+    document.querySelectorAll('.interest-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  function resetInterest() {
+    currentInterest = 'interested';
+    document.querySelectorAll('.interest-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.level === 'interested');
+    });
+  }
+
 
   function getVerdictClass(total) {
     if (total >= 80) return 'score-strong';
@@ -1165,19 +1504,16 @@
     if (total >= 65) return 'Apply';
     if (total >= 50) return 'Apply Selectively';
     if (total >= 35) return 'Weak Fit';
-    return 'Pass';
+    return 'Skip';
   }
 
   async function addToQueue() {
-    const company = document.getElementById('company').value.trim();
-    const role    = document.getElementById('role').value.trim();
-
-    if (!company && !role) {
-      showToast('Enter a company or role title first');
+    if (!lastEvalResult) {
+      showToast('Evaluate a role first');
       return;
     }
 
-    const actualMax = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+    const actualMax  = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
     items.forEach(item => {
       actualMax[parseInt(item.dataset.section)] += parseInt(item.dataset.max);
     });
@@ -1194,10 +1530,13 @@
     const total = Object.values(weighted).reduce((a, b) => a + b, 0);
 
     const payload = {
-      company:   company || '—',
-      role:      role || '—',
+      company:   lastEvalResult.company,
+      role:      lastEvalResult.role,
+      url:       lastEvalResult.url || '',
       total,
       weighted,
+      reasoning: lastEvalResult.reasoning,
+      interest:  currentInterest,
       notes:     document.getElementById('notes').value.trim(),
       addedAt:   new Date().toISOString(),
     };
@@ -1209,10 +1548,12 @@
         body:    JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
-      const saved = await res.json();   // Cosmos-assigned id comes back here
+      const saved = await res.json();
       queue.push(saved);
       renderQueue();
       showToast(`${saved.company} · ${saved.role} added to pipeline`);
+      resetInterest();
+      resetAll();
     } catch (err) {
       console.error('addToQueue failed:', err);
       showToast('Failed to save — please try again');
@@ -1246,18 +1587,18 @@
 
     const container = document.getElementById('queue-container');
     if (sorted.length === 0) {
-      container.innerHTML = `<div class="queue-empty">No roles queued yet.<br>Score a role below and click <strong>Add to Pipeline</strong>.</div>`;
+      container.innerHTML = `<div class="queue-empty">No roles queued yet.<br>Evaluate a role below and click <strong>Add to Pipeline</strong>.</div>`;
       return;
     }
 
-    const cfg       = CONTENT;
-    const dimLabels = Object.fromEntries(cfg.sections.map(s => [s.id, s.title.split(' ')[0]]));
+    const dimLabels = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.title.split(' ')[0]]));
     container.innerHTML = `<div class="queue-grid">${sorted.map(e => `
       <div class="queue-card">
         <div class="queue-card-top">
           <div>
             <div class="queue-card-company">${escHtml(e.company)}</div>
             <div class="queue-card-role">${escHtml(e.role)}</div>
+            ${e.interest ? interestBadge(e.interest) : ''}
           </div>
           <div>
             <div class="queue-card-score ${getVerdictClass(e.total)}">${e.total}</div>
@@ -1269,6 +1610,7 @@
         </div>
         ${e.notes ? `<div class="queue-card-notes">${escHtml(e.notes)}</div>` : ''}
         <div class="queue-card-actions">
+          ${e.url ? `<a href="${escHtml(e.url)}" target="_blank" rel="noopener" class="qc-remove" style="text-decoration:none">↗ posting</a>` : ''}
           <button class="qc-remove" onclick="removeFromQueue('${e.id}')">Remove</button>
         </div>
       </div>
