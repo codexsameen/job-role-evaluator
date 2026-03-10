@@ -951,8 +951,6 @@
 
 <script>
   // ── CONTENT CONFIG ───────────────────────────────────────────────────────
-  // Content configuration is loaded from content.json
-
   let CONTENT = null;
 
   // ── RENDERER ─────────────────────────────────────────────────────────────
@@ -960,12 +958,10 @@
   function renderEvaluator(content = null) {
     const cfg = content || CONTENT;
     if (!cfg) return;
-    // Header
     document.querySelector('.eyebrow').textContent = cfg.meta.eyebrow;
     document.querySelector('h1').innerHTML = cfg.meta.title;
     document.querySelector('.subtitle').textContent = cfg.meta.subtitle;
 
-    // Knockouts
     const koMount = document.getElementById('knockout-mount');
     koMount.innerHTML = `
       <div class="knockout-section">
@@ -981,7 +977,6 @@
         </div>
       </div>`;
 
-    // Dashboard
     const dashMount = document.getElementById('dashboard-mount');
     const dashLabels = { 1: 'Technical Fit', 2: 'Environment & Culture', 3: 'Comp & FIRE', 4: 'Learning Trajectory' };
     dashMount.innerHTML = `
@@ -1007,7 +1002,6 @@
         </div>
       </div>`;
 
-    // Sections
     const sectMount = document.getElementById('sections-mount');
     sectMount.innerHTML = cfg.sections.map(s => `
       <div class="section s${s.id}">
@@ -1033,35 +1027,30 @@
       </div>`).join('');
   }
 
-  // ── ASYNC INIT────────────────────────────────────────────────────────────
-  // Fetch content.json and /api/queue in parallel
+  // ── ASYNC INIT ────────────────────────────────────────────────────────────
+
   async function init() {
     try {
       const [content, queueData] = await Promise.all([
         fetch('./content.json').then(r => r.json()),
-        fetch('/api/queue').then(r => r.json()).catch(() => []), // fallback if endpoint unavailable
+        fetch('/api/queue').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
+
       CONTENT = content;
       queue = queueData || [];
-      
-      // Initialize scoring AFTER CONTENT is set and DOM is rendered
+
       maxScores = Object.fromEntries(CONTENT.sections.map(s => [s.id, s.weight]));
-      scores = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
-      
+      scores    = Object.fromEntries(CONTENT.sections.map(s => [s.id, 0]));
+
       renderEvaluator(content);
-      
-      items = document.querySelectorAll('.item[data-section]');
+
+      items      = document.querySelectorAll('.item[data-section]');
       itemScores = new Array(items.length).fill(0);
-      
-      renderQueue(queueData);
+
+      renderQueue();
       recalc();
     } catch (err) {
       console.error('Failed to initialize:', err);
-      // Fallback: still try to load from localStorage
-      loadQueue();
-      renderEvaluator();
-      renderQueue();
-      recalc();
     }
   }
 
@@ -1073,12 +1062,11 @@
       const user = data.clientPrincipal;
       if (!user) return;
       document.getElementById('user-name').innerHTML = `logged in as <span>${user.userDetails}</span>`;
-      // GitHub exposes the avatar via their API using the userDetails (username)
       const avatar = document.getElementById('user-avatar');
       avatar.src = `https://github.com/${user.userDetails}.png?size=44`;
       avatar.onload = () => avatar.classList.add('loaded');
     })
-    .catch(() => {}); // silently ignore — only works when deployed on SWA
+    .catch(() => {});
 
   // ── SCORING ───────────────────────────────────────────────────────────────
 
@@ -1132,11 +1120,11 @@
     document.getElementById('progress-fill').style.width = total + '%';
 
     let label, sub;
-    if (total >= 80) { label = 'Strong Apply'; sub = 'High alignment across all dimensions. Prioritise this application.'; }
-    else if (total >= 65) { label = 'Apply'; sub = 'Good fit with some gaps. Worth the investment.'; }
-    else if (total >= 50) { label = 'Apply Selectively'; sub = 'Reasonable fit but notable gaps. Investigate before applying.'; }
-    else if (total >= 35) { label = 'Weak Fit'; sub = 'Significant misalignment. Apply only if options are limited.'; }
-    else { label = 'Pass'; sub = 'Poor fit across multiple dimensions.'; }
+    if (total >= 80)      { label = 'Strong Apply';       sub = 'High alignment across all dimensions. Prioritise this application.'; }
+    else if (total >= 65) { label = 'Apply';               sub = 'Good fit with some gaps. Worth the investment.'; }
+    else if (total >= 50) { label = 'Apply Selectively';   sub = 'Reasonable fit but notable gaps. Investigate before applying.'; }
+    else if (total >= 35) { label = 'Weak Fit';            sub = 'Significant misalignment. Apply only if options are limited.'; }
+    else                  { label = 'Pass';                sub = 'Poor fit across multiple dimensions.'; }
 
     document.getElementById('verdict-label').textContent = label;
     document.getElementById('verdict-sub').textContent = sub;
@@ -1163,26 +1151,7 @@
 
   // ── QUEUE ─────────────────────────────────────────────────────────────────
 
-  const QUEUE_KEY = 'job-evaluator-queue';
   let queue = [];
-
-  async function loadQueue() {
-    try {
-      const result = await window.storage.get(QUEUE_KEY);
-      queue = result ? JSON.parse(result.value) : [];
-    } catch (e) {
-      queue = [];
-    }
-    renderQueue();
-  }
-
-  async function saveQueue() {
-    try {
-      await window.storage.set(QUEUE_KEY, JSON.stringify(queue));
-    } catch (e) {
-      console.error('Storage error:', e);
-    }
-  }
 
   function getVerdictClass(total) {
     if (total >= 80) return 'score-strong';
@@ -1199,9 +1168,9 @@
     return 'Pass';
   }
 
-  function addToQueue() {
+  async function addToQueue() {
     const company = document.getElementById('company').value.trim();
-    const role = document.getElementById('role').value.trim();
+    const role    = document.getElementById('role').value.trim();
 
     if (!company && !role) {
       showToast('Enter a company or role title first');
@@ -1224,42 +1193,56 @@
     });
     const total = Object.values(weighted).reduce((a, b) => a + b, 0);
 
-    const entry = {
-      id: Date.now(),
-      company: company || '—',
-      role: role || '—',
+    const payload = {
+      company:   company || '—',
+      role:      role || '—',
       total,
       weighted,
-      notes: document.getElementById('notes').value.trim(),
-      addedAt: new Date().toISOString(),
+      notes:     document.getElementById('notes').value.trim(),
+      addedAt:   new Date().toISOString(),
     };
 
-    queue.push(entry);
-    saveQueue();
-    renderQueue();
-    showToast(`${entry.company} · ${entry.role} added to pipeline`);
+    try {
+      const res = await fetch('/api/queue', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
+      const saved = await res.json();   // Cosmos-assigned id comes back here
+      queue.push(saved);
+      renderQueue();
+      showToast(`${saved.company} · ${saved.role} added to pipeline`);
+    } catch (err) {
+      console.error('addToQueue failed:', err);
+      showToast('Failed to save — please try again');
+    }
   }
 
-  function removeFromQueue(id) {
-    queue = queue.filter(e => e.id !== id);
-    saveQueue();
-    renderQueue();
+  async function removeFromQueue(id) {
+    try {
+      const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE /api/queue/${id} ${res.status}`);
+      queue = queue.filter(e => e.id !== id);
+      renderQueue();
+    } catch (err) {
+      console.error('removeFromQueue failed:', err);
+      showToast('Failed to remove — please try again');
+    }
   }
 
-  function renderQueue(queueData = null) {
-    const qData = queueData || queue;
-    const cfg = CONTENT;
-    const sort = document.getElementById('queue-sort-select').value;
-    const sorted = [...qData].sort((a, b) => {
+  function renderQueue() {
+    const sort   = document.getElementById('queue-sort-select').value;
+    const sorted = [...queue].sort((a, b) => {
       if (sort === 'score-desc') return b.total - a.total;
       if (sort === 'score-asc')  return a.total - b.total;
-      if (sort === 'added-desc') return b.id - a.id;
-      if (sort === 'added-asc')  return a.id - b.id;
+      if (sort === 'added-desc') return new Date(b.addedAt) - new Date(a.addedAt);
+      if (sort === 'added-asc')  return new Date(a.addedAt) - new Date(b.addedAt);
       return 0;
     });
 
-    document.getElementById('queue-count').textContent = `${qData.length} role${qData.length !== 1 ? 's' : ''}`;
-    document.getElementById('queue-clear-btn').classList.toggle('visible', qData.length > 0);
+    document.getElementById('queue-count').textContent = `${queue.length} role${queue.length !== 1 ? 's' : ''}`;
+    document.getElementById('queue-clear-btn').classList.toggle('visible', queue.length > 0);
 
     const container = document.getElementById('queue-container');
     if (sorted.length === 0) {
@@ -1267,6 +1250,7 @@
       return;
     }
 
+    const cfg       = CONTENT;
     const dimLabels = Object.fromEntries(cfg.sections.map(s => [s.id, s.title.split(' ')[0]]));
     container.innerHTML = `<div class="queue-grid">${sorted.map(e => `
       <div class="queue-card">
@@ -1285,14 +1269,14 @@
         </div>
         ${e.notes ? `<div class="queue-card-notes">${escHtml(e.notes)}</div>` : ''}
         <div class="queue-card-actions">
-          <button class="qc-remove" onclick="removeFromQueue(${e.id})">Remove</button>
+          <button class="qc-remove" onclick="removeFromQueue('${e.id}')">Remove</button>
         </div>
       </div>
     `).join('')}</div>`;
   }
 
   function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   let toastTimer;
@@ -1315,11 +1299,17 @@
   }
 
   async function confirmClearQueue() {
-    queue = [];
-    await saveQueue();
-    document.getElementById('queue-confirm-bar').classList.remove('visible');
-    renderQueue();
-    showToast('Pipeline cleared');
+    try {
+      const res = await fetch('/api/queue', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE /api/queue ${res.status}`);
+      queue = [];
+      document.getElementById('queue-confirm-bar').classList.remove('visible');
+      renderQueue();
+      showToast('Pipeline cleared');
+    } catch (err) {
+      console.error('confirmClearQueue failed:', err);
+      showToast('Failed to clear — please try again');
+    }
   }
 
   init();
