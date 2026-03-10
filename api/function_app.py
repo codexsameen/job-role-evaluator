@@ -117,9 +117,17 @@ def load_content():
     raise FileNotFoundError(f"content.json not found. Tried: {candidates}")
 
 def load_prompt_template():
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'prompts', 'evaluate.yaml'))
-    with open(path) as f:
-        return yaml.safe_load(f)
+    base = os.path.dirname(__file__)
+    candidates = [
+        os.path.join(base, 'prompts', 'evaluate.yaml'),
+        '/home/site/wwwroot/api/prompts/evaluate.yaml',
+    ]
+    for path in candidates:
+        path = os.path.abspath(path)
+        if os.path.exists(path):
+            with open(path) as f:
+                return yaml.safe_load(f)
+    raise FileNotFoundError(f"evaluate.yaml not found. Tried: {candidates}")
 
 def build_prompt(content, jd_text):
     sections_text = ""
