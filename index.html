@@ -76,35 +76,6 @@
     <button class="evaluate-btn" id="evaluate-btn" onclick="runEvaluation()">Evaluate Role</button>
   </div>
 
-  <!-- Extracted company / role -->
-  <div class="extracted-meta" id="extracted-meta">
-    <div>
-      <div class="extracted-company" id="extracted-company"></div>
-      <div class="extracted-role" id="extracted-role"></div>
-    </div>
-    <a class="extracted-url" id="extracted-url" target="_blank" rel="noopener"></a>
-  </div>
-
-  <div id="knockout-mount"></div>
-  <div id="dashboard-mount"></div>
-  <div id="sections-mount"></div>
-
-  <!-- Notes -->
-  <div class="notes-area">
-    <div class="notes-label">Notes</div>
-    <textarea id="notes" placeholder="Gut feel, red flags, things to research, questions to ask in interview..."></textarea>
-    <div class="interest-row">
-      <span class="interest-label">Interest</span>
-      <div class="interest-options">
-        <button class="interest-btn" data-level="not-interested" onclick="setInterest(this, 'not-interested')">Not Interested</button>
-        <button class="interest-btn" data-level="backburner" onclick="setInterest(this, 'backburner')">Backburner</button>
-        <button class="interest-btn" data-level="under-consideration" onclick="setInterest(this, 'under-consideration')">Under Consideration</button>
-        <button class="interest-btn active" data-level="interested" onclick="setInterest(this, 'interested')">Interested</button>
-      </div>
-    </div>
-    <br>
-    <button class="reset-btn" onclick="resetAll()">Reset Evaluator</button>
-  </div>
 
 </div>
 
