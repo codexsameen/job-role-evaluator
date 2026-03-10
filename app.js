@@ -159,7 +159,7 @@
       scores:     {},
       reasoning:  {},
       knockouts:  [],
-      interest:   'interested',
+      interest:   'under-consideration',
       status:     'bookmarked',
       notes:      '',
       addedAt:    new Date().toISOString(),

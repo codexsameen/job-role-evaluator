@@ -24,6 +24,24 @@
     <a class="logout-btn" href="/.auth/logout">Log out</a>
   </div>
 
+  <!-- JD input -->
+  <div class="jd-input-area">
+    <div class="jd-input-row">
+      <div class="field-group">
+        <label class="field-label">Job Posting URL</label>
+        <div class="url-input-row">
+          <input type="text" id="jd-url" placeholder="https://...  (job share link)">
+          <button class="fetch-btn" id="fetch-btn" onclick="fetchJdFromUrl(document.getElementById('jd-url').value.trim())">↓ Fetch JD</button>
+        </div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Job Description</label>
+      <textarea id="jd-text" class="jd-textarea" placeholder="Paste the full job description here, or use the URL field above to fetch it automatically..."></textarea>
+    </div>
+    <button class="evaluate-btn" id="evaluate-btn" onclick="runEvaluation()">Evaluate Role</button>
+  </div>
+
   <!-- Pipeline -->
   <div class="queue-section" id="queue-section">
     <div class="queue-header">
@@ -56,24 +74,6 @@
   <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-inner" id="drawer-inner"></div>
-  </div>
-
-  <!-- JD input -->
-  <div class="jd-input-area">
-    <div class="jd-input-row">
-      <div class="field-group">
-        <label class="field-label">Job Posting URL</label>
-        <div class="url-input-row">
-          <input type="text" id="jd-url" placeholder="https://...  (job share link)">
-          <button class="fetch-btn" id="fetch-btn" onclick="fetchJdFromUrl(document.getElementById('jd-url').value.trim())">↓ Fetch JD</button>
-        </div>
-      </div>
-    </div>
-    <div class="field-group">
-      <label class="field-label">Job Description</label>
-      <textarea id="jd-text" class="jd-textarea" placeholder="Paste the full job description here, or use the URL field above to fetch it automatically..."></textarea>
-    </div>
-    <button class="evaluate-btn" id="evaluate-btn" onclick="runEvaluation()">Evaluate Role</button>
   </div>
 
 
