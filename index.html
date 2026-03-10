@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<body>
 <div class="container">
 
   <header>
@@ -22,7 +21,7 @@
       <div class="user-name" id="user-name"></div>
     </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
-  <a class="logout-btn" href="/.auth/logout">Log out</a>
+    <a class="logout-btn" href="/.auth/logout">Log out</a>
   </div>
 
   <!-- Pipeline -->
@@ -41,12 +40,8 @@
       </div>
       <button class="queue-clear-btn" id="queue-clear-btn" onclick="promptClearQueue()">Clear all</button>
     </div>
-    <!-- Summary bar -->
     <div class="summary-bar" id="summary-bar"></div>
-
-    <!-- Filter bar -->
     <div class="filter-bar" id="filter-bar"></div>
-
     <div class="queue-confirm-bar" id="queue-confirm-bar">
       <span>Clear all roles from the pipeline? This cannot be undone.</span>
       <button class="qcb-cancel" onclick="cancelClearQueue()">Cancel</button>
@@ -68,17 +63,20 @@
     <div class="jd-input-row">
       <div class="field-group">
         <label class="field-label">Job Posting URL</label>
-        <input type="text" id="jd-url" placeholder="https://...  (optional, for reference)">
+        <div class="url-input-row">
+          <input type="text" id="jd-url" placeholder="https://...  (job share link)">
+          <button class="fetch-btn" id="fetch-btn" onclick="fetchJdFromUrl(document.getElementById('jd-url').value.trim())">↓ Fetch JD</button>
+        </div>
       </div>
     </div>
     <div class="field-group">
       <label class="field-label">Job Description</label>
-      <textarea id="jd-text" class="jd-textarea" placeholder="Paste the full job description here..."></textarea>
+      <textarea id="jd-text" class="jd-textarea" placeholder="Paste the full job description here, or use the URL field above to fetch it automatically..."></textarea>
     </div>
     <button class="evaluate-btn" id="evaluate-btn" onclick="runEvaluation()">Evaluate Role</button>
   </div>
 
-  <!-- Extracted company / role (shown after evaluation) -->
+  <!-- Extracted company / role -->
   <div class="extracted-meta" id="extracted-meta">
     <div>
       <div class="extracted-company" id="extracted-company"></div>
@@ -87,13 +85,8 @@
     <a class="extracted-url" id="extracted-url" target="_blank" rel="noopener"></a>
   </div>
 
-  <!-- Knockout flags -->
   <div id="knockout-mount"></div>
-
-  <!-- Score dashboard -->
   <div id="dashboard-mount"></div>
-
-  <!-- Sections -->
   <div id="sections-mount"></div>
 
   <!-- Notes -->
@@ -116,23 +109,13 @@
 
 </div>
 
-<!-- Loading overlay -->
+<!-- Single overlay — used for both loading spinner and error dialog -->
 <div class="eval-overlay" id="eval-overlay">
   <div class="eval-dialog">
-    <div class="eval-spinner"></div>
-    <div class="eval-title">Evaluating Role</div>
+    <div class="eval-spinner" id="eval-spinner"></div>
+    <div class="eval-title" id="eval-overlay-title">Evaluating Role</div>
     <div class="eval-status" id="eval-status">Reading job description...</div>
-  </div>
-</div>
-
-<div class="queue-toast" id="queue-toast"></div>
-
-<!-- Loading overlay -->
-<div class="eval-overlay" id="eval-overlay">
-  <div class="eval-dialog">
-    <div class="eval-spinner"></div>
-    <div class="eval-title">Evaluating Role</div>
-    <div class="eval-status" id="eval-status">Reading job description...</div>
+    <button class="eval-dismiss-btn" id="eval-dismiss-btn" onclick="closeErrorDialog()" style="display:none">Dismiss</button>
   </div>
 </div>
 
