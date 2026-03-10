@@ -354,7 +354,7 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
         content = load_content()
     except Exception as e:
         logging.exception("Failed to load content.json")
-        return func.HttpResponse("Server configuration error", status_code=500)
+        return func.HttpResponse(f"AI service error: {str(e)}", status_code=500)
 
     system_message, user_message = build_prompt(content, jd_text)
 
@@ -367,7 +367,6 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
                 {"role": "system", "content": system_message},
                 {"role": "user",   "content": user_message},
             ],
-            max_completion_tokens=8000,
         )
     except Exception as e:
         logging.exception("OpenAI call failed")
