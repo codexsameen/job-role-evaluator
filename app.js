@@ -489,6 +489,11 @@
 
   // ── DRAWER ────────────────────────────────────────────────────────────────
 
+  function barColor(pct) {
+    // 0% → red (hsl 0), 100% → teal (hsl 150), muted saturation to match dark theme
+    return `hsl(${Math.round(pct * 1.45)}, 52%, 46%)`;
+  }
+
   function openDrawer(id) {
     const entry = pipelineState.queue.find(e => e.id === id);
     if (!entry) return;
@@ -542,7 +547,7 @@
         </div>
         ${entry.evalStatus !== 'pending' ? `
         <div class="drawer-total-track">
-          <div class="drawer-total-fill ${getVerdictClass(entry.total)}" style="width: ${entry.total}%"></div>
+          <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
         </div>
         <div class="drawer-dims">
           ${CONTENT.sections.map(s => {
@@ -554,7 +559,7 @@
                 <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
               </div>
               <div class="drawer-dim-track">
-                <div class="drawer-dim-fill" style="width: ${pct}%"></div>
+                <div class="drawer-dim-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
               </div>
             </div>`;
           }).join('')}
@@ -590,14 +595,13 @@
                   const score     = secScores[i] ?? 0;
                   const label     = item.labels?.[score] ?? String(score);
                   const reason    = secReason[i] || '';
-                  const pct       = item.max > 0 ? Math.round((score / item.max) * 100) : 0;
-                  const fillClass = score === 0 ? 'low' : score === item.max ? 'high' : 'mid';
+                  const pct  = item.max > 0 ? Math.round((score / item.max) * 100) : 0;
                   return `
                     <div class="drawer-eval-item">
                       <div class="drawer-eval-question">${escHtml(item.question)}</div>
                       <div class="drawer-eval-bar-wrap">
                         <div class="drawer-eval-bar-track">
-                          <div class="drawer-eval-bar-fill ${fillClass}" style="width: ${pct}%"></div>
+                          <div class="drawer-eval-bar-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
                         </div>
                         <span class="drawer-eval-score-num">${score}/${item.max}</span>
                         <span class="drawer-eval-label">${escHtml(label)}</span>

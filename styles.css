@@ -583,10 +583,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
 .drawer-total-track { height: 4px; background: var(--border); margin-bottom: 20px; overflow: hidden; }
 .drawer-total-fill  { height: 100%; transition: width 0.4s ease; }
-.drawer-total-fill.score-strong { background: var(--accent); }
-.drawer-total-fill.score-apply  { background: var(--accent2); }
-.drawer-total-fill.score-weak   { background: var(--t3); }
-.drawer-total-fill.score-pass   { background: var(--muted); }
 
 .drawer-dims { display: flex; flex-direction: column; gap: 10px; }
 
@@ -625,9 +621,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .drawer-eval-bar-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .drawer-eval-bar-track { flex: 1; height: 6px; background: var(--border); overflow: hidden; }
 .drawer-eval-bar-fill { height: 100%; transition: width 0.4s ease; }
-.drawer-eval-bar-fill.low  { background: var(--danger); opacity: 0.7; }
-.drawer-eval-bar-fill.mid  { background: var(--accent); }
-.drawer-eval-bar-fill.high { background: var(--accent2); }
 .drawer-eval-score-num { font-family: 'Fraunces', serif; font-size: 12px; color: var(--text); flex-shrink: 0; }
 .drawer-eval-label { font-size: 10px; color: var(--muted); font-style: italic; flex-shrink: 0; }
 .drawer-eval-reasoning { font-size: 11px; color: var(--muted); line-height: 1.6; padding: 5px 8px; border-left: 2px solid var(--border); }
