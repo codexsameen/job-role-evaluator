@@ -1,4 +1,6 @@
-// ── THEME ─────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 25;
+
+  // ── THEME ─────────────────────────────────────────────────────────────────
 
   function applyTheme(theme) {
     document.body.classList.toggle('light', theme === 'light');
@@ -447,6 +449,7 @@
 
   let pipelineState = {
     queue:     [],
+    page:      0,
     sortKey:   'added-desc',
     activeId:  null,
     filters: {
@@ -492,6 +495,7 @@
   function toggleFilter(group, value) {
     const set = pipelineState.filters[group];
     set.has(value) ? set.delete(value) : set.add(value);
+    pipelineState.page = 0;
     renderSummary();
     renderTable();
   }
@@ -500,6 +504,7 @@
     pipelineState.filters.interest.clear();
     pipelineState.filters.verdict.clear();
     pipelineState.filters.status.clear();
+    pipelineState.page = 0;
     renderSummary();
     renderTable();
   }
@@ -512,6 +517,7 @@
       set.clear();
       set.add(status);
     }
+    pipelineState.page = 0;
     renderSummary();
     renderTable();
   }
@@ -583,8 +589,16 @@
     `;
   }
 
+  function goToPage(n) {
+    pipelineState.page = n;
+    renderTable();
+    document.getElementById('queue-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   function renderTable() {
+    const prevSortKey = pipelineState.sortKey;
     pipelineState.sortKey = document.getElementById('queue-sort-select').value;
+    if (pipelineState.sortKey !== prevSortKey) pipelineState.page = 0;
     const filtered = getFiltered();
     const { queue, activeId, filters } = pipelineState;
 
@@ -632,6 +646,11 @@
       return;
     }
 
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    if (pipelineState.page >= totalPages) pipelineState.page = Math.max(0, totalPages - 1);
+    const page = pipelineState.page;
+    const pageItems = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
     container.innerHTML = `
       <table class="pipeline-table">
         <thead>
@@ -646,7 +665,7 @@
           </tr>
         </thead>
         <tbody>
-          ${filtered.map(e => `
+          ${pageItems.map(e => `
             <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
               <td class="col-company">${escHtml(e.company)}</td>
               <td class="col-role">${escHtml(e.role)}</td>
@@ -658,7 +677,13 @@
             </tr>
           `).join('')}
         </tbody>
-      </table>`;
+      </table>
+      ${totalPages > 1 ? `
+      <div class="pagination">
+        <button class="pagination-btn" onclick="goToPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>← Prev</button>
+        <span class="pagination-info">Page ${page + 1} of ${totalPages}</span>
+        <button class="pagination-btn" onclick="goToPage(${page + 1})" ${page >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+      </div>` : ''}`;
   }
 
   function formatDate(iso) {

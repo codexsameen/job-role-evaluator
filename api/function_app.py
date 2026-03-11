@@ -204,7 +204,7 @@ def get_queue(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         container = get_container()
-        query = "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC"
+        query = "SELECT TOP 500 * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC"
         params = [{"name": "@userId", "value": user_id}]
         items = list(container.query_items(query=query, parameters=params))
         return func.HttpResponse(
