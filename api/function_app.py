@@ -439,7 +439,6 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
                     {"role": "system", "content": template["system"]},
                     {"role": "user",   "content": user_message},
                 ],
-                temperature=0.3,
             )
 
         def _validate_rubric(rubric):
