@@ -57,12 +57,12 @@
 
   fetch('/.auth/me')
     .then(r => r.json())
+    .catch(() => ({ clientPrincipal: null }))
     .then(data => {
-      const user = data.clientPrincipal;
-      if (!user) return;
-      document.getElementById('user-name').innerHTML = `logged in as <span>${user.userDetails}</span>`;
+      const username = data.clientPrincipal?.userDetails ?? 'dev';
+      document.getElementById('user-name').innerHTML = `logged in as <span>${username}</span>`;
       const avatar = document.getElementById('user-avatar');
-      avatar.src   = `https://github.com/${user.userDetails}.png?size=44`;
+      avatar.src   = `https://github.com/${username}.png?size=44`;
       avatar.onload = () => avatar.classList.add('loaded');
     })
     .catch(() => {});

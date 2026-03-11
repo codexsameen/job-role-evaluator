@@ -136,7 +136,7 @@ textarea::placeholder { color: var(--muted); }
 
 /* ── HEADER ──────────────────────────────────────────────────────────────── */
 
-header { margin-bottom: 48px; border-bottom: 1px solid var(--border); padding-bottom: 32px; }
+header { margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 32px; }
 .eyebrow { margin-bottom: 12px; }
 
 h1 {
