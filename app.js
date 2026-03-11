@@ -43,6 +43,7 @@
       if (profile?.rubricStatus === 'generating') {
         // Page reloaded mid-generation — resume polling without showing the modal
         setEvaluateBtnState(true, 'Generating rubric…');
+        startRubricProgress();
         _pollForRubric();
       } else if (!profile?.rubricGeneratedAt) {
         showProfileModal(profile);
@@ -252,6 +253,7 @@
       closeProfileModal();
       showToast('Profile saved — generating your rubric…');
       setEvaluateBtnState(true, 'Generating rubric…');
+      startRubricProgress();
       _pollForRubric();  // fire-and-forget
 
     } catch (err) {
@@ -280,6 +282,7 @@
         if (!pollRes.ok) continue;
         const polled = await pollRes.json();
         if (polled.rubricStatus === 'error') {
+          resetRubricProgress();
           showToast('Rubric generation failed — open profile to retry');
           setEvaluateBtnState(false, 'Evaluate Role');
           return;
@@ -290,16 +293,19 @@
         }
       }
       if (!rubric) {
+        resetRubricProgress();
         showToast('Rubric generation timed out — open profile to retry');
         setEvaluateBtnState(false, 'Evaluate Role');
         return;
       }
       CONTENT = rubric;
       document.getElementById('view-rubric-btn').hidden = false;
+      finishRubricProgress();
       showToast('Rubric ready — start evaluating!');
       setEvaluateBtnState(false, 'Evaluate Role');
     } catch (err) {
       console.error('_pollForRubric failed:', err);
+      resetRubricProgress();
       showToast('Rubric generation failed — open profile to retry');
       setEvaluateBtnState(false, 'Evaluate Role');
     }
@@ -861,6 +867,30 @@
       console.error('removeFromQueue failed:', err);
       showToast('Failed to remove — please try again');
     }
+  }
+
+  // ── RUBRIC PROGRESS BAR ───────────────────────────────────────────────────
+
+  function startRubricProgress() {
+    const bar  = document.getElementById('rubric-progress');
+    const fill = document.getElementById('rubric-progress-fill');
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    bar.hidden = false;
+    fill.getBoundingClientRect(); // force reflow so transition fires
+    fill.style.transition = 'width 55s linear';
+    fill.style.width = '90%';
+  }
+
+  function finishRubricProgress() {
+    const fill = document.getElementById('rubric-progress-fill');
+    fill.style.transition = 'width 0.3s ease';
+    fill.style.width = '100%';
+    setTimeout(() => { document.getElementById('rubric-progress').hidden = true; }, 600);
+  }
+
+  function resetRubricProgress() {
+    document.getElementById('rubric-progress').hidden = true;
   }
 
   // ── RUBRIC EDITOR ─────────────────────────────────────────────────────────
