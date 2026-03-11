@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import threading
 import uuid
 import yaml
 from datetime import datetime, timezone
@@ -102,25 +103,6 @@ def fetch_jd_from_url(url: str) -> str:
 # Content + prompt helpers
 # ---------------------------------------------------------------------------
 
-def load_content():
-    base = os.path.dirname(__file__)
-    candidates = [
-        os.path.join(base, 'content.json'),
-        os.path.join(base, '..', 'content.json'),
-    ]
-    for path in candidates:
-        path = os.path.abspath(path)
-        if os.path.exists(path):
-            with open(path) as f:
-                return json.load(f)
-    raise FileNotFoundError(f"content.json not found. Tried: {candidates}")
-
-_HARDCODED_CANDIDATE_PROFILE = (
-    "- Gen AI / AI Engineer role seeker based in London\n"
-    "- Background in data engineering (Python, Metaflow) and backend engineering (Java Spring Boot)\n"
-    "- Building Gen AI portfolio: RAG pipelines, agentic workflows, LLM evaluation\n"
-    "- Priorities: technical growth in Gen AI, good culture, strong compensation, learning applicable to transforming a family business"
-)
 
 def _load_yaml_prompt(filename):
     base = os.path.dirname(__file__)
@@ -137,7 +119,7 @@ def _load_yaml_prompt(filename):
 
 def build_prompt(content, jd_text, candidate_profile=None):
     if candidate_profile is None:
-        candidate_profile = _HARDCODED_CANDIDATE_PROFILE
+        candidate_profile = "(no candidate profile provided)"
 
     sections_text = ""
     for section in content["sections"]:
@@ -432,46 +414,63 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
         client = get_openai_client()
         deployment = os.environ["OPENAI_DEPLOYMENT"]
 
-        def _call_llm():
-            return client.chat.completions.create(
-                model=deployment,
-                messages=[
-                    {"role": "system", "content": template["system"]},
-                    {"role": "user",   "content": user_message},
-                ],
-            )
-
-        def _validate_rubric(rubric):
-            weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
-            if weight_sum != 100:
-                raise ValueError(f"Weights sum to {weight_sum}, expected 100")
-            for s in rubric["sections"]:
-                if not s.get("id") or not s.get("title") or not s.get("items"):
-                    raise ValueError("Section missing required keys")
-            if not rubric.get("knockouts"):
-                raise ValueError("No knockouts defined")
-
-        rubric = None
-        for attempt in range(2):
-            try:
-                completion = _call_llm()
-                raw = completion.choices[0].message.content.strip()
-                rubric = json.loads(raw)
-                _validate_rubric(rubric)
-                break
-            except (json.JSONDecodeError, ValueError, KeyError) as e:
-                logging.warning("Rubric generation attempt %d failed: %s", attempt + 1, e)
-                if attempt == 1:
-                    return func.HttpResponse(
-                        f"Failed to generate valid rubric after 2 attempts: {e}",
-                        status_code=502,
-                    )
-
-        profile["rubric"] = rubric
-        profile["rubricGeneratedAt"] = datetime.now(timezone.utc).isoformat()
+        # Mark as generating and return 202 immediately so the HTTP proxy
+        # does not time out waiting for the LLM call to complete.
+        profile["rubricStatus"] = "generating"
         profiles.upsert_item(body=profile)
 
-        return func.HttpResponse(json.dumps(rubric), status_code=200, mimetype="application/json")
+        def _do_generation():
+            try:
+                def _call_llm():
+                    return client.chat.completions.create(
+                        model=deployment,
+                        messages=[
+                            {"role": "system", "content": template["system"]},
+                            {"role": "user",   "content": user_message},
+                        ],
+                    )
+
+                def _validate_rubric(rubric):
+                    weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
+                    if weight_sum != 100:
+                        raise ValueError(f"Weights sum to {weight_sum}, expected 100")
+                    for s in rubric["sections"]:
+                        if not s.get("id") or not s.get("title") or not s.get("items"):
+                            raise ValueError("Section missing required keys")
+                    if not rubric.get("knockouts"):
+                        raise ValueError("No knockouts defined")
+
+                rubric = None
+                for attempt in range(2):
+                    try:
+                        completion = _call_llm()
+                        raw = completion.choices[0].message.content.strip()
+                        rubric = json.loads(raw)
+                        _validate_rubric(rubric)
+                        break
+                    except (json.JSONDecodeError, ValueError, KeyError) as e:
+                        logging.warning("Rubric generation attempt %d failed: %s", attempt + 1, e)
+                        if attempt == 1:
+                            profile["rubricStatus"] = "error"
+                            profiles.upsert_item(body=profile)
+                            return
+
+                profile["rubric"] = rubric
+                profile["rubricGeneratedAt"] = datetime.now(timezone.utc).isoformat()
+                profile["rubricStatus"] = "done"
+                profiles.upsert_item(body=profile)
+                logging.info("Rubric generated successfully for user %s", user_id)
+
+            except Exception:
+                logging.exception("Background rubric generation failed for user %s", user_id)
+                try:
+                    profile["rubricStatus"] = "error"
+                    profiles.upsert_item(body=profile)
+                except Exception:
+                    pass
+
+        threading.Thread(target=_do_generation, daemon=True).start()
+        return func.HttpResponse(status_code=202)
 
     except Exception as e:
         logging.exception("POST /api/profile/generate-rubric failed")
@@ -539,14 +538,10 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     except Exception:
         pass  # no profile yet — use defaults
 
-    if profile.get("rubric"):
-        content = profile["rubric"]
-    else:
-        try:
-            content = load_content()
-        except Exception as e:
-            logging.exception("Failed to load content.json")
-            return func.HttpResponse(f"AI service error: {str(e)}", status_code=500)
+    if not profile.get("rubric"):
+        return func.HttpResponse("No rubric found. Please generate a rubric from your profile first.", status_code=400)
+
+    content = profile["rubric"]
 
     candidate_profile = _profile_to_candidate_string(profile) or None
     system_message, user_message = build_prompt(content, jd_text, candidate_profile)

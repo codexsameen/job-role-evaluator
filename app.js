@@ -32,14 +32,18 @@
         document.querySelector('.eyebrow').textContent = profile.displayName;
       }
 
-      CONTENT = (profile?.rubric) || await fetch('./content.json').then(r => r.json()).catch(() => null);
+      CONTENT = profile?.rubric || null;
 
       queue = queueData || [];
       renderSummary();
       renderTable();
       setupUrlField();
 
-      if (!profile?.rubricGeneratedAt) {
+      if (profile?.rubricStatus === 'generating') {
+        // Page reloaded mid-generation — resume polling without showing the modal
+        setEvaluateBtnState(true, 'Generating rubric…');
+        _pollForRubric();
+      } else if (!profile?.rubricGeneratedAt) {
         showProfileModal(profile);
       }
     } catch (err) {
@@ -233,22 +237,22 @@
       setProfileStatus('Generating your personalised rubric…');
       btn.textContent = 'Generating…';
 
-      // Generate rubric
+      // Kick off rubric generation — returns 202 immediately, runs in background
       const rubrRes = await fetch('/api/profile/generate-rubric', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      if (!rubrRes.ok) {
+      if (rubrRes.status !== 202) {
         const msg = await rubrRes.text();
         throw new Error(msg || 'Rubric generation failed');
       }
-      const rubric = await rubrRes.json();
 
-      // Update CONTENT in memory
-      CONTENT = rubric;
-
+      // Close modal immediately and disable Evaluate while rubric generates
       closeProfileModal();
-      showToast('Profile saved — rubric generated');
+      showToast('Profile saved — generating your rubric…');
+      setEvaluateBtnState(true, 'Generating rubric…');
+      _pollForRubric();  // fire-and-forget
+
     } catch (err) {
       console.error('saveProfile failed:', err);
       setProfileStatus(`Error: ${err.message}`, true);
@@ -256,6 +260,46 @@
       btn.disabled = false;
       btn.textContent = 'Generate My Rubric';
       spinner?.classList.add('hidden');
+    }
+  }
+
+  function setEvaluateBtnState(disabled, label) {
+    const btn = document.getElementById('evaluate-btn');
+    if (!btn) return;
+    btn.disabled = disabled;
+    btn.textContent = label;
+  }
+
+  async function _pollForRubric() {
+    try {
+      let rubric = null;
+      for (let i = 0; i < 40; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const pollRes = await fetch('/api/profile');
+        if (!pollRes.ok) continue;
+        const polled = await pollRes.json();
+        if (polled.rubricStatus === 'error') {
+          showToast('Rubric generation failed — open profile to retry');
+          setEvaluateBtnState(false, 'Evaluate Role');
+          return;
+        }
+        if (polled.rubricStatus === 'done' && polled.rubric) {
+          rubric = polled.rubric;
+          break;
+        }
+      }
+      if (!rubric) {
+        showToast('Rubric generation timed out — open profile to retry');
+        setEvaluateBtnState(false, 'Evaluate Role');
+        return;
+      }
+      CONTENT = rubric;
+      showToast('Rubric ready — start evaluating!');
+      setEvaluateBtnState(false, 'Evaluate Role');
+    } catch (err) {
+      console.error('_pollForRubric failed:', err);
+      showToast('Rubric generation failed — open profile to retry');
+      setEvaluateBtnState(false, 'Evaluate Role');
     }
   }
 
