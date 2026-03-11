@@ -278,8 +278,9 @@ const PAGE_SIZE = 25;
   async function _pollForRubric() {
     try {
       let rubric = null;
-      for (let i = 0; i < 40; i++) {
-        await new Promise(r => setTimeout(r, 3000));
+      for (let i = 0; i < 15; i++) {
+        const delay = Math.min(2000 * Math.pow(2, i), 15000);
+        await new Promise(r => setTimeout(r, delay));
         const pollRes = await fetch('/api/profile');
         if (!pollRes.ok) continue;
         const polled = await pollRes.json();
