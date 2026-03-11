@@ -34,7 +34,7 @@ user: |
       "subtitle": "Score job descriptions against your priorities."
     }},
     "knockouts": [
-      {{"label": "<short flag name>", "detail": "<one sentence explaining the disqualifier>"}}
+      {{"label": "<human readable heading, e.g. 'Requires 5-day on-site attendance'>", "detail": "<one sentence explaining the disqualifier>"}}
     ],
     "sections": [
       {{
