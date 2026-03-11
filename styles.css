@@ -180,7 +180,7 @@ h1 em { font-style: italic; color: var(--accent); }
 .user-avatar.loaded { display: block; }
 .user-name { font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
 .user-name span { color: var(--text); }
-.logout-btn { font-size: 9px; letter-spacing: 0.15em; padding: 5px 12px; text-decoration: none; display: inline-block; }
+.logout-btn { font-size: 9px; letter-spacing: 0.15em; padding: 5px 12px; text-decoration: none; display: inline-block; white-space: nowrap; }
 
 /* ── SCORE CLASSES ───────────────────────────────────────────────────────── */
 
