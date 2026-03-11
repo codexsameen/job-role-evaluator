@@ -13,9 +13,14 @@ user: |
   First, extract the company name and role title from the job description.
   If either cannot be determined, use "Unknown".
 
-  Then score the job description against the rubric below. For each item, provide:
-  1. A score from 0 to the item's max score
+  Then score the job description against every item in every section of the rubric below.
+  For each item you MUST provide:
+  1. A score from 0 to the item's max score (integer, never exceed the max)
   2. One concise sentence of reasoning (max 20 words)
+
+  IMPORTANT: Each section's "scores" and "reasoning" arrays MUST contain exactly as many
+  elements as that section has items (shown in the section header). Do not skip, merge,
+  or omit any items. If information is absent from the JD, score 0 with reasoning "Not mentioned."
 
   Also assess each knockout flag as true (flag raised) or false (not raised).
 
@@ -27,15 +32,15 @@ user: |
   ---
 
   Respond ONLY with a JSON object in exactly this format, no preamble, no markdown.
-  Include one key per section id for both "scores" and "reasoning":
+  Each section array must have exactly the number of elements shown in the section header:
   {{
     "company": "<extracted company name>",
     "role": "<extracted role title>",
     "scores": {{
-      "<section_id>": [<score per item in order>]
+      "<section_id>": [<one integer per item, in order>]
     }},
     "reasoning": {{
-      "<section_id>": ["<one sentence per item>"]
+      "<section_id>": ["<one sentence per item, in order>"]
     }},
     "knockouts": [<true/false per knockout in order>]
   }}

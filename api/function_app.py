@@ -123,7 +123,7 @@ def build_prompt(content, jd_text, candidate_profile=None):
 
     sections_text = ""
     for section in content["sections"]:
-        sections_text += f"\n## Section {section['id']}: {section['title']} (weight: {section['weight']} pts)\n"
+        sections_text += f"\n## Section {section['id']}: {section['title']} (weight: {section['weight']} pts, {len(section['items'])} items — scores array must have {len(section['items'])} elements)\n"
         for i, item in enumerate(section["items"]):
             sections_text += (
                 f"  Item {i}: {item['question']}\n"
