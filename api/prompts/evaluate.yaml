@@ -3,10 +3,7 @@ system: |
 
 user: |
   You are evaluating a job description for a candidate with the following profile:
-  - Gen AI / AI Engineer role seeker based in London
-  - Background in data engineering (Python, Metaflow) and backend engineering (Java Spring Boot)
-  - Building Gen AI portfolio: RAG pipelines, agentic workflows, LLM evaluation
-  - Priorities: technical growth in Gen AI, good culture, strong compensation, learning applicable to transforming a family business
+  {candidate_profile}
 
   Job Description:
   {jd_text}
@@ -29,21 +26,16 @@ user: |
 
   ---
 
-  Respond ONLY with a JSON object in exactly this format, no preamble, no markdown:
+  Respond ONLY with a JSON object in exactly this format, no preamble, no markdown.
+  Include one key per section id for both "scores" and "reasoning":
   {{
     "company": "<extracted company name>",
     "role": "<extracted role title>",
     "scores": {{
-      "1": [<score per item in order>],
-      "2": [<score per item in order>],
-      "3": [<score per item in order>],
-      "4": [<score per item in order>]
+      "<section_id>": [<score per item in order>]
     }},
     "reasoning": {{
-      "1": ["<one sentence per item>"],
-      "2": ["<one sentence per item>"],
-      "3": ["<one sentence per item>"],
-      "4": ["<one sentence per item>"]
+      "<section_id>": ["<one sentence per item>"]
     }},
     "knockouts": [<true/false per knockout in order>]
   }}

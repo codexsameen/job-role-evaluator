@@ -14,21 +14,34 @@
 
   // ── CONTENT ───────────────────────────────────────────────────────────────
   let CONTENT = null;
+  let _currentProfile = null;
 
   // ── INIT ──────────────────────────────────────────────────────────────────
 
   async function init() {
     applyTheme(localStorage.getItem('theme') || 'dark');
     try {
-      const [content, queueData] = await Promise.all([
-        fetch('./content.json').then(r => r.json()),
+      const [profile, queueData] = await Promise.all([
+        fetch('/api/profile').then(r => r.ok ? r.json() : null).catch(() => null),
         fetch('/api/queue').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
-      CONTENT = content;
-      queue   = queueData || [];
+
+      _currentProfile = profile;
+
+      if (profile?.displayName) {
+        document.querySelector('.eyebrow').textContent = profile.displayName;
+      }
+
+      CONTENT = (profile?.rubric) || await fetch('./content.json').then(r => r.json()).catch(() => null);
+
+      queue = queueData || [];
       renderSummary();
       renderTable();
       setupUrlField();
+
+      if (!profile?.rubricGeneratedAt) {
+        showProfileModal(profile);
+      }
     } catch (err) {
       console.error('Failed to initialize:', err);
     }
@@ -130,6 +143,120 @@
     document.getElementById('eval-status').textContent         = 'Reading job description...';
     document.getElementById('eval-status').style.color         = '';
     document.getElementById('eval-dismiss-btn').style.display  = 'none';
+  }
+
+  // ── PROFILE MODAL ─────────────────────────────────────────────────────────
+
+  function showProfileModal(profile) {
+    const overlay = document.getElementById('profile-overlay');
+    if (!overlay) return;
+
+    // Pre-fill fields if a partial profile exists
+    if (profile) {
+      const set = (id, val) => { if (val && document.getElementById(id)) document.getElementById(id).value = val; };
+      set('pf-role-title', profile.roleTitle);
+      set('pf-location',   profile.location);
+      set('pf-currency',   profile.currencySymbol);
+      set('pf-comp-min',   profile.compMin);
+      set('pf-comp-max',   profile.compMax);
+      set('pf-skills',     profile.skills);
+      set('pf-background', profile.backgroundSummary);
+      set('pf-goals',      profile.careerGoals);
+      set('pf-company-size', profile.companySizePreference);
+      set('pf-arrangement',  profile.workArrangement);
+    }
+
+    // Hide cancel button on first-time setup (no rubric yet)
+    const hasRubric = !!(profile?.rubricGeneratedAt);
+    const cancelBtn = document.getElementById('profile-cancel-btn');
+    if (cancelBtn) cancelBtn.style.display = hasRubric ? '' : 'none';
+
+    overlay.classList.add('visible');
+  }
+
+  function closeProfileModal() {
+    document.getElementById('profile-overlay')?.classList.remove('visible');
+    setProfileStatus('');
+  }
+
+  function setProfileStatus(msg, isError) {
+    const el = document.getElementById('profile-status');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = msg ? '' : 'none';
+    el.style.color = isError ? 'var(--danger)' : 'var(--muted)';
+  }
+
+  async function saveProfile() {
+    const btn     = document.getElementById('generate-rubric-btn');
+    const spinner = document.getElementById('profile-spinner');
+
+    const profileData = {
+      roleTitle:             document.getElementById('pf-role-title')?.value.trim(),
+      location:              document.getElementById('pf-location')?.value.trim(),
+      currencySymbol:        document.getElementById('pf-currency')?.value,
+      compMin:               document.getElementById('pf-comp-min')?.value.trim(),
+      compMax:               document.getElementById('pf-comp-max')?.value.trim(),
+      skills:                document.getElementById('pf-skills')?.value.trim(),
+      backgroundSummary:     document.getElementById('pf-background')?.value.trim(),
+      careerGoals:           document.getElementById('pf-goals')?.value.trim(),
+      companySizePreference: document.getElementById('pf-company-size')?.value,
+      workArrangement:       document.getElementById('pf-arrangement')?.value,
+    };
+
+    if (!profileData.roleTitle || !profileData.location) {
+      setProfileStatus('Role title and location are required.', true);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    spinner?.classList.remove('hidden');
+    setProfileStatus('Saving profile…');
+
+    try {
+      // Save profile fields
+      const saveRes = await fetch('/api/profile', {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(profileData),
+      });
+      if (!saveRes.ok) throw new Error(`PUT /api/profile ${saveRes.status}`);
+      const savedProfile = await saveRes.json();
+
+      // Update eyebrow and cached profile
+      _currentProfile = savedProfile;
+      if (savedProfile.displayName) {
+        document.querySelector('.eyebrow').textContent = savedProfile.displayName;
+      }
+
+      setProfileStatus('Generating your personalised rubric…');
+      btn.textContent = 'Generating…';
+
+      // Generate rubric
+      const rubrRes = await fetch('/api/profile/generate-rubric', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!rubrRes.ok) {
+        const msg = await rubrRes.text();
+        throw new Error(msg || 'Rubric generation failed');
+      }
+      const rubric = await rubrRes.json();
+
+      // Update CONTENT in memory
+      CONTENT = rubric;
+
+      closeProfileModal();
+      showToast('Profile saved — rubric generated');
+    } catch (err) {
+      console.error('saveProfile failed:', err);
+      setProfileStatus(`Error: ${err.message}`, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Generate My Rubric';
+      spinner?.classList.add('hidden');
+    }
   }
 
   // ── EVALUATION ────────────────────────────────────────────────────────────
@@ -497,7 +624,7 @@
     if (!entry) return;
     pipelineState.activeId = id;
 
-    const dimLabels = { 1: 'Technical Fit', 2: 'Environment & Culture', 3: 'Comp & FIRE', 4: 'Learning Trajectory' };
+    const dimLabels = CONTENT.sections.reduce((acc, s) => ({ ...acc, [s.id]: s.title }), {});
 
     document.getElementById('drawer-inner').innerHTML = `
       <div class="drawer-header">

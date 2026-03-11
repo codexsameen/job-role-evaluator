@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 
 from shared.auth import get_user_id
-from shared.db import get_container
+from shared.db import get_container, get_profiles_container
 
 # ---------------------------------------------------------------------------
 # OpenAI client — initialised once at module load
@@ -115,20 +115,30 @@ def load_content():
                 return json.load(f)
     raise FileNotFoundError(f"content.json not found. Tried: {candidates}")
 
-def load_prompt_template():
+_HARDCODED_CANDIDATE_PROFILE = (
+    "- Gen AI / AI Engineer role seeker based in London\n"
+    "- Background in data engineering (Python, Metaflow) and backend engineering (Java Spring Boot)\n"
+    "- Building Gen AI portfolio: RAG pipelines, agentic workflows, LLM evaluation\n"
+    "- Priorities: technical growth in Gen AI, good culture, strong compensation, learning applicable to transforming a family business"
+)
+
+def _load_yaml_prompt(filename):
     base = os.path.dirname(__file__)
     candidates = [
-        os.path.join(base, 'prompts', 'evaluate.yaml'),
-        '/home/site/wwwroot/api/prompts/evaluate.yaml',
+        os.path.join(base, 'prompts', filename),
+        os.path.join('/home/site/wwwroot/api/prompts', filename),
     ]
     for path in candidates:
         path = os.path.abspath(path)
         if os.path.exists(path):
             with open(path) as f:
                 return yaml.safe_load(f)
-    raise FileNotFoundError(f"evaluate.yaml not found. Tried: {candidates}")
+    raise FileNotFoundError(f"{filename} not found. Tried: {candidates}")
 
-def build_prompt(content, jd_text):
+def build_prompt(content, jd_text, candidate_profile=None):
+    if candidate_profile is None:
+        candidate_profile = _HARDCODED_CANDIDATE_PROFILE
+
     sections_text = ""
     for section in content["sections"]:
         sections_text += f"\n## Section {section['id']}: {section['title']} (weight: {section['weight']} pts)\n"
@@ -144,13 +154,37 @@ def build_prompt(content, jd_text):
         for i, ko in enumerate(content["knockouts"])
     )
 
-    template = load_prompt_template()
+    template = _load_yaml_prompt("evaluate.yaml")
     user_message = template["user"].format(
+        candidate_profile=candidate_profile,
         jd_text=jd_text,
         sections_text=sections_text,
         knockout_text=knockout_text,
     )
     return template["system"], user_message
+
+
+def _profile_to_candidate_string(profile):
+    """Convert a profile dict to a bullet-point string for the evaluate prompt."""
+    lines = []
+    if profile.get("roleTitle"):
+        lines.append(f"- Targeting: {profile['roleTitle']} roles")
+    if profile.get("location"):
+        lines.append(f"- Based in: {profile['location']}")
+    if profile.get("skills"):
+        lines.append(f"- Key skills: {profile['skills']}")
+    if profile.get("backgroundSummary"):
+        lines.append(f"- Background: {profile['backgroundSummary']}")
+    if profile.get("careerGoals"):
+        lines.append(f"- Career goals: {profile['careerGoals']}")
+    if profile.get("companySizePreference"):
+        lines.append(f"- Preferred company size: {profile['companySizePreference']}")
+    if profile.get("workArrangement"):
+        lines.append(f"- Work arrangement: {profile['workArrangement']}")
+    if profile.get("compMin") and profile.get("compMax"):
+        currency = profile.get("currencySymbol", "£")
+        lines.append(f"- Target compensation: {currency}{profile['compMin']}–{currency}{profile['compMax']}")
+    return "\n".join(lines) if lines else None
 
 
 # ---------------------------------------------------------------------------
@@ -314,6 +348,138 @@ def delete_queue(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
+# GET /api/profile
+# ---------------------------------------------------------------------------
+@app.route(route="profile", methods=["GET"])
+def get_profile(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        profiles = get_profiles_container()
+        doc = profiles.read_item(item=user_id, partition_key=user_id)
+        return func.HttpResponse(json.dumps(doc), status_code=200, mimetype="application/json")
+    except Exception as e:
+        if "404" in str(e) or "NotFound" in str(e):
+            return func.HttpResponse("{}", status_code=200, mimetype="application/json")
+        logging.exception("GET /api/profile failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/profile
+# ---------------------------------------------------------------------------
+@app.route(route="profile", methods=["PUT"])
+def put_profile(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    try:
+        profiles = get_profiles_container()
+        try:
+            existing = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception:
+            existing = {"id": user_id, "userId": user_id}
+
+        existing.update(body)
+        existing["id"] = user_id
+        existing["userId"] = user_id
+
+        # Compute displayName
+        parts = [p for p in [
+            existing.get("roleTitle"),
+            existing.get("location"),
+            "2026",
+        ] if p]
+        existing["displayName"] = " · ".join(parts) if parts else "Job Role Evaluator"
+
+        profiles.upsert_item(body=existing)
+        return func.HttpResponse(json.dumps(existing), status_code=200, mimetype="application/json")
+    except Exception as e:
+        logging.exception("PUT /api/profile failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/profile/generate-rubric
+# ---------------------------------------------------------------------------
+@app.route(route="profile/generate-rubric", methods=["POST"])
+def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+
+    try:
+        profiles = get_profiles_container()
+        try:
+            profile = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception:
+            return func.HttpResponse("Profile not found — save profile first", status_code=404)
+
+        template = _load_yaml_prompt("generate_rubric.yaml")
+        user_message = template["user"].format(
+            role_title=profile.get("roleTitle", ""),
+            location=profile.get("location", ""),
+            currency_symbol=profile.get("currencySymbol", "£"),
+            comp_min=profile.get("compMin", ""),
+            comp_max=profile.get("compMax", ""),
+            skills=profile.get("skills", ""),
+            background_summary=profile.get("backgroundSummary", ""),
+            career_goals=profile.get("careerGoals", ""),
+            company_size_preference=profile.get("companySizePreference", ""),
+            work_arrangement=profile.get("workArrangement", ""),
+        )
+
+        client = get_openai_client()
+        deployment = os.environ["OPENAI_DEPLOYMENT"]
+
+        def _call_llm():
+            return client.chat.completions.create(
+                model=deployment,
+                messages=[
+                    {"role": "system", "content": template["system"]},
+                    {"role": "user",   "content": user_message},
+                ],
+                temperature=0.3,
+            )
+
+        def _validate_rubric(rubric):
+            weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
+            if weight_sum != 100:
+                raise ValueError(f"Weights sum to {weight_sum}, expected 100")
+            for s in rubric["sections"]:
+                if not s.get("id") or not s.get("title") or not s.get("items"):
+                    raise ValueError("Section missing required keys")
+            if not rubric.get("knockouts"):
+                raise ValueError("No knockouts defined")
+
+        rubric = None
+        for attempt in range(2):
+            try:
+                completion = _call_llm()
+                raw = completion.choices[0].message.content.strip()
+                rubric = json.loads(raw)
+                _validate_rubric(rubric)
+                break
+            except (json.JSONDecodeError, ValueError, KeyError) as e:
+                logging.warning("Rubric generation attempt %d failed: %s", attempt + 1, e)
+                if attempt == 1:
+                    return func.HttpResponse(
+                        f"Failed to generate valid rubric after 2 attempts: {e}",
+                        status_code=502,
+                    )
+
+        profile["rubric"] = rubric
+        profile["rubricGeneratedAt"] = datetime.now(timezone.utc).isoformat()
+        profiles.upsert_item(body=profile)
+
+        return func.HttpResponse(json.dumps(rubric), status_code=200, mimetype="application/json")
+
+    except Exception as e:
+        logging.exception("POST /api/profile/generate-rubric failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
 # POST /api/fetch-jd
 # ---------------------------------------------------------------------------
 @app.route(route="fetch-jd", methods=["POST"])
@@ -366,13 +532,25 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     if not jd_text:
         return func.HttpResponse("jd_text is required", status_code=400)
 
+    # Load profile + rubric from Cosmos; fall back to disk content.json
+    profile = {}
     try:
-        content = load_content()
-    except Exception as e:
-        logging.exception("Failed to load content.json")
-        return func.HttpResponse(f"AI service error: {str(e)}", status_code=500)
+        profiles = get_profiles_container()
+        profile = profiles.read_item(item=user_id, partition_key=user_id)
+    except Exception:
+        pass  # no profile yet — use defaults
 
-    system_message, user_message = build_prompt(content, jd_text)
+    if profile.get("rubric"):
+        content = profile["rubric"]
+    else:
+        try:
+            content = load_content()
+        except Exception as e:
+            logging.exception("Failed to load content.json")
+            return func.HttpResponse(f"AI service error: {str(e)}", status_code=500)
+
+    candidate_profile = _profile_to_candidate_string(profile) or None
+    system_message, user_message = build_prompt(content, jd_text, candidate_profile)
 
     try:
         client     = get_openai_client()

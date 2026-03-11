@@ -10,7 +10,7 @@
 <div class="container">
 
   <header>
-    <div class="eyebrow">Gen AI Engineer · London · 2026</div>
+    <div class="eyebrow">Job Role Evaluator</div>
     <h1>Role <em>Evaluator</em></h1>
     <p class="subtitle">Score job descriptions against your priorities. Weighted across four dimensions: technical fit, environment, compensation, and learning trajectory.</p>
   </header>
@@ -21,6 +21,7 @@
       <div class="user-name" id="user-name"></div>
     </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
+    <button class="logout-btn" onclick="showProfileModal(_currentProfile)">Edit Profile</button>
     <a class="logout-btn" href="/.auth/logout">Log out</a>
   </div>
 
@@ -77,6 +78,87 @@
   </div>
 
 
+</div>
+
+<!-- Profile setup modal -->
+<div class="eval-overlay" id="profile-overlay">
+  <div class="eval-dialog profile-dialog">
+    <div class="eval-title">Set Up Your Profile</div>
+    <div class="eval-status" id="profile-status" style="display:none"></div>
+    <form id="profile-form" onsubmit="return false">
+      <div class="profile-fields">
+        <div class="profile-field-row">
+          <div class="field-group">
+            <label class="field-label">Target Role Title</label>
+            <input type="text" id="pf-role-title" placeholder="e.g. Frontend Developer">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Location</label>
+            <input type="text" id="pf-location" placeholder="e.g. Berlin">
+          </div>
+        </div>
+        <div class="profile-field-row">
+          <div class="field-group">
+            <label class="field-label">Currency</label>
+            <select id="pf-currency">
+              <option value="£">£ GBP</option>
+              <option value="$">$ USD</option>
+              <option value="€">€ EUR</option>
+              <option value="S$">S$ SGD</option>
+              <option value="A$">A$ AUD</option>
+              <option value="C$">C$ CAD</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Comp Min</label>
+            <input type="text" id="pf-comp-min" placeholder="e.g. 80000">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Comp Max</label>
+            <input type="text" id="pf-comp-max" placeholder="e.g. 120000">
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Key Skills</label>
+          <input type="text" id="pf-skills" placeholder="e.g. React, TypeScript, GraphQL">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Background Summary</label>
+          <textarea id="pf-background" class="profile-textarea" placeholder="Brief summary of your experience and background..."></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Career Goals</label>
+          <textarea id="pf-goals" class="profile-textarea" placeholder="What do you want to achieve in your next role?"></textarea>
+        </div>
+        <div class="profile-field-row">
+          <div class="field-group">
+            <label class="field-label">Company Size</label>
+            <select id="pf-company-size">
+              <option value="any">Any size</option>
+              <option value="startup (1–50)">Startup (1–50)</option>
+              <option value="scale-up (50–500)">Scale-up (50–500)</option>
+              <option value="mid-size (500–5000)">Mid-size (500–5000)</option>
+              <option value="enterprise (5000+)">Enterprise (5000+)</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Work Arrangement</label>
+            <select id="pf-arrangement">
+              <option value="hybrid">Hybrid</option>
+              <option value="remote">Remote</option>
+              <option value="on-site">On-site</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="evaluate-btn" id="generate-rubric-btn" onclick="saveProfile()">Generate My Rubric</button>
+        <button class="qcb-cancel" id="profile-cancel-btn" onclick="closeProfileModal()">Cancel</button>
+      </div>
+    </form>
+    <div class="eval-spinner hidden" id="profile-spinner"></div>
+  </div>
 </div>
 
 <!-- Single overlay — used for both loading spinner and error dialog -->

@@ -756,3 +756,40 @@ body.light .drawer-backdrop { background: rgba(245,240,232,0.7); }
   .filter-bar  { gap: 10px; }
   .summary-bar { gap: 8px; }
 }
+
+/* ── PROFILE MODAL ───────────────────────────────────────────────────────── */
+
+.profile-dialog {
+  max-width: 600px !important;
+  width: 94% !important;
+  text-align: left !important;
+  padding: 36px 40px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.profile-fields { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+
+.profile-field-row { display: flex; gap: 12px; }
+.profile-field-row .field-group { flex: 1; }
+
+.profile-textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.profile-actions .evaluate-btn { flex: 1; }
+
+@media (max-width: 480px) {
+  .profile-dialog { padding: 24px 20px !important; }
+  .profile-field-row { flex-direction: column; }
+}

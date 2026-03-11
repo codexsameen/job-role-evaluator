@@ -1,0 +1,58 @@
+system: |
+  You are a job evaluation rubric designer. You return only valid JSON, no markdown, no explanation.
+
+user: |
+  Design a personalised job evaluation rubric for the following candidate:
+
+  Role target: {role_title}
+  Location: {location}
+  Compensation range: {currency_symbol}{comp_min}–{currency_symbol}{comp_max}
+  Key skills: {skills}
+  Background summary: {background_summary}
+  Career goals: {career_goals}
+  Preferred company size: {company_size_preference}
+  Work arrangement: {work_arrangement}
+
+  ---
+
+  Generate a JSON rubric that allows this specific candidate to evaluate job postings against their priorities.
+
+  Requirements:
+  - 4 to 6 sections, each with a unique integer id (starting at 1)
+  - Each section has 4 to 7 items
+  - Section weights must be integers that sum to exactly 100
+  - Each item has: question (string), signals (string), max (integer, 2–4)
+  - Tailor knockouts, section titles, weights, questions and signals to reflect the candidate's specific role, skills, location, and goals
+  - The compensation section must reference the candidate's local currency and expected salary range
+  - Include 4–6 knockout flags relevant to this candidate's situation
+
+  Format example (follow this schema exactly):
+  {
+    "meta": {
+      "eyebrow": "<Role Title> · <Location> · <Year>",
+      "title": "Role <em>Evaluator</em>",
+      "subtitle": "Score job descriptions against your priorities."
+    },
+    "knockouts": [
+      {"label": "<short flag name>", "detail": "<one sentence explaining the disqualifier>"}
+    ],
+    "sections": [
+      {
+        "id": 1,
+        "title": "<Section Title>",
+        "weight": 35,
+        "items": [
+          {
+            "question": "<question to score from JD>",
+            "signals": "<comma-separated signals to look for>",
+            "max": 3,
+            "labels": ["<score 0 label>", "<score 1 label>", "<score 2 label>", "<score 3 label>"]
+          }
+        ]
+      }
+    ]
+  }
+
+  The current year is 2026.
+
+  Respond ONLY with a JSON object matching the schema above. No preamble, no markdown.
