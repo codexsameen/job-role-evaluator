@@ -46,16 +46,11 @@ body.light .queue-card-breakdown { border-top-color: #d8d0c0; }
   background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 4px 8px;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.15s;
   flex-shrink: 0;
-  padding: 0;
-  line-height: 1;
 }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
