@@ -793,3 +793,37 @@ body.light .drawer-backdrop { background: rgba(245,240,232,0.7); }
   .profile-dialog { padding: 24px 20px !important; }
   .profile-field-row { flex-direction: column; }
 }
+
+/* ── RUBRIC EDITOR MODAL ─────────────────────────────────────────────────── */
+
+.rubric-dialog {
+  max-width: 760px !important;
+  width: 94% !important;
+  text-align: left !important;
+  padding: 36px 40px !important;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.rubric-hint {
+  margin: 8px 0 16px;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+#rubric-editor {
+  width: 100%;
+  height: 60vh;
+  min-height: 200px;
+  resize: vertical;
+  font-family: monospace;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+@media (max-width: 480px) {
+  .rubric-dialog { padding: 24px 20px !important; }
+}

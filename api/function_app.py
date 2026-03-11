@@ -384,6 +384,52 @@ def put_profile(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
+# Rubric validation (shared by generate and manual-edit endpoints)
+# ---------------------------------------------------------------------------
+def _validate_rubric(rubric):
+    weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
+    if weight_sum != 100:
+        raise ValueError(f"Weights sum to {weight_sum}, expected 100")
+    for s in rubric["sections"]:
+        if not s.get("id") or not s.get("title") or not s.get("items"):
+            raise ValueError("Section missing required keys")
+    if not rubric.get("knockouts"):
+        raise ValueError("No knockouts defined")
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/profile/rubric  — save a manually edited rubric
+# ---------------------------------------------------------------------------
+@app.route(route="profile/rubric", methods=["PUT"])
+def save_rubric(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+
+    try:
+        rubric = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    try:
+        _validate_rubric(rubric)
+    except (ValueError, KeyError) as e:
+        return func.HttpResponse(str(e), status_code=400)
+
+    try:
+        profiles = get_profiles_container()
+        try:
+            existing = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception:
+            return func.HttpResponse("Profile not found — save profile first", status_code=404)
+
+        existing["rubric"] = rubric
+        profiles.upsert_item(existing)
+        return func.HttpResponse(status_code=200)
+    except Exception as e:
+        logging.exception("PUT /api/profile/rubric failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
 # POST /api/profile/generate-rubric
 # ---------------------------------------------------------------------------
 @app.route(route="profile/generate-rubric", methods=["POST"])
@@ -429,16 +475,6 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
                             {"role": "user",   "content": user_message},
                         ],
                     )
-
-                def _validate_rubric(rubric):
-                    weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
-                    if weight_sum != 100:
-                        raise ValueError(f"Weights sum to {weight_sum}, expected 100")
-                    for s in rubric["sections"]:
-                        if not s.get("id") or not s.get("title") or not s.get("items"):
-                            raise ValueError("Section missing required keys")
-                    if not rubric.get("knockouts"):
-                        raise ValueError("No knockouts defined")
 
                 rubric = None
                 for attempt in range(2):

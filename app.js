@@ -33,6 +33,7 @@
       }
 
       CONTENT = profile?.rubric || null;
+      document.getElementById('view-rubric-btn').hidden = !CONTENT;
 
       queue = queueData || [];
       renderSummary();
@@ -294,6 +295,7 @@
         return;
       }
       CONTENT = rubric;
+      document.getElementById('view-rubric-btn').hidden = false;
       showToast('Rubric ready — start evaluating!');
       setEvaluateBtnState(false, 'Evaluate Role');
     } catch (err) {
@@ -860,6 +862,64 @@
       showToast('Failed to remove — please try again');
     }
   }
+
+  // ── RUBRIC EDITOR ─────────────────────────────────────────────────────────
+
+  function showRubricModal() {
+    document.getElementById('rubric-editor').value = JSON.stringify(CONTENT, null, 2);
+    document.getElementById('rubric-error').style.display = 'none';
+    document.getElementById('rubric-overlay').classList.add('visible');
+  }
+
+  function closeRubricModal() {
+    document.getElementById('rubric-overlay').classList.remove('visible');
+  }
+
+  async function saveRubric() {
+    const errorEl = document.getElementById('rubric-error');
+    const saveBtn = document.getElementById('rubric-save-btn');
+    errorEl.style.display = 'none';
+
+    let rubric;
+    try {
+      rubric = JSON.parse(document.getElementById('rubric-editor').value);
+    } catch (e) {
+      errorEl.textContent = `Invalid JSON: ${e.message}`;
+      errorEl.style.display = '';
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/profile/rubric', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rubric),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        errorEl.textContent = msg || 'Save failed';
+        errorEl.style.display = '';
+        return;
+      }
+      CONTENT = rubric;
+      closeRubricModal();
+      showToast('Rubric saved');
+    } catch (err) {
+      errorEl.textContent = 'Network error — please try again';
+      errorEl.style.display = '';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Rubric';
+    }
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('rubric-overlay').classList.contains('visible')) {
+      closeRubricModal();
+    }
+  });
 
   // ── TOAST ─────────────────────────────────────────────────────────────────
 

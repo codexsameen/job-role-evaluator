@@ -21,6 +21,7 @@
       <div class="user-name" id="user-name"></div>
     </div>
     <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
+    <button class="logout-btn" id="view-rubric-btn" onclick="showRubricModal()" hidden>View Rubric</button>
     <button class="logout-btn" onclick="showProfileModal(_currentProfile)">Edit Profile</button>
     <a class="logout-btn" href="/.auth/logout">Log out</a>
   </div>
@@ -158,6 +159,20 @@
       </div>
     </form>
     <div class="eval-spinner hidden" id="profile-spinner"></div>
+  </div>
+</div>
+
+<!-- Rubric editor modal -->
+<div class="eval-overlay" id="rubric-overlay">
+  <div class="eval-dialog rubric-dialog">
+    <div class="eval-title">Your Rubric</div>
+    <p class="rubric-hint">Edit the JSON below, then save. Section weights must sum to 100.</p>
+    <textarea id="rubric-editor" spellcheck="false"></textarea>
+    <div class="eval-status" id="rubric-error" style="display:none"></div>
+    <div class="profile-actions">
+      <button class="evaluate-btn" id="rubric-save-btn" onclick="saveRubric()">Save Rubric</button>
+      <button class="qcb-cancel" onclick="closeRubricModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
