@@ -20,10 +20,12 @@
       <img class="user-avatar" id="user-avatar" src="" alt="">
       <div class="user-name" id="user-name"></div>
     </div>
-    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
-    <button class="logout-btn" id="view-rubric-btn" onclick="showRubricModal()" hidden>View Rubric</button>
-    <button class="logout-btn" onclick="showProfileModal(_currentProfile)">Edit Profile</button>
-    <a class="logout-btn" href="/.auth/logout">Log out</a>
+    <div class="user-actions">
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
+      <button class="logout-btn" id="view-rubric-btn" onclick="showRubricModal()" hidden>View Rubric</button>
+      <button class="logout-btn" onclick="showProfileModal(_currentProfile)">Edit Profile</button>
+      <a class="logout-btn" href="/.auth/logout">Log out</a>
+    </div>
   </div>
 
   <!-- JD input -->

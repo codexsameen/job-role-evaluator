@@ -162,12 +162,17 @@ h1 em { font-style: italic; color: var(--accent); }
 
 .user-bar {
   display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 14px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
   margin-bottom: 32px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
+}
+.user-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .user-identity { display: flex; align-items: center; gap: 8px; }
