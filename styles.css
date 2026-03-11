@@ -277,6 +277,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .qcb-confirm:hover { opacity: 0.85; }
 
 .queue-empty { padding: 24px; border: 1px dashed var(--border); text-align: center; color: var(--muted); font-size: 11px; letter-spacing: 0.05em; line-height: 1.8; }
+.queue-loading { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .queue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 600px) { .queue-grid { grid-template-columns: 1fr; } .queue-sort { display: none; } }
 
