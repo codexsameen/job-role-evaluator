@@ -298,32 +298,34 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .queue-card-actions { display: flex; justify-content: flex-end; margin-top: 12px; gap: 8px; }
 .qc-remove { font-size: 9px; }
 
-/* ── RUBRIC PROGRESS BAR ─────────────────────────────────────────────────── */
+/* ── PROGRESS BARS ───────────────────────────────────────────────────────── */
 
-#rubric-progress {
+#progress-stack {
   position: fixed;
   bottom: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 150;
+}
+.progress-item {
   width: 280px;
   background: var(--surface, #1a1a1a);
   padding: 12px 16px;
-  z-index: 150;
   border-top-left-radius: 6px;
 }
-#rubric-progress::before {
-  content: 'Generating rubric…';
-  display: block;
+.progress-item-label {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.55;
   margin-bottom: 8px;
 }
-#rubric-progress-fill {
+.progress-item-fill {
   height: 3px;
   width: 0%;
   background: var(--accent);
-  transition: width 55s linear;
 }
 
 /* ── TOAST ───────────────────────────────────────────────────────────────── */

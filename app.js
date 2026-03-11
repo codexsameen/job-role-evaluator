@@ -364,6 +364,7 @@
     renderTable();
     showToast('Role queued for evaluation');
 
+    const evalBar = _createProgressBar('Evaluating role\u2026', 10);
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
@@ -387,6 +388,7 @@
       await patchEntry(pendingEntry.id, patch);
       const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
       if (entry) Object.assign(entry, patch);
+      evalBar.finish();
       renderSummary();
       renderTable();
 
@@ -397,6 +399,7 @@
 
     } catch (err) {
       console.error('runEvaluation failed:', err);
+      evalBar.reset();
       const patch = { evalStatus: 'error' };
       await patchEntry(pendingEntry.id, patch);
       const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
@@ -869,29 +872,36 @@
     }
   }
 
-  // ── RUBRIC PROGRESS BAR ───────────────────────────────────────────────────
+  // ── PROGRESS BARS ─────────────────────────────────────────────────────────
 
-  function startRubricProgress() {
-    const bar  = document.getElementById('rubric-progress');
-    const fill = document.getElementById('rubric-progress-fill');
+  function _createProgressBar(label, estimatedSeconds) {
+    const item = document.createElement('div');
+    item.className = 'progress-item';
+    item.innerHTML = `<div class="progress-item-label">${label}</div><div class="progress-item-fill"></div>`;
+    document.getElementById('progress-stack').appendChild(item);
+
+    const fill = item.querySelector('.progress-item-fill');
     fill.style.transition = 'none';
     fill.style.width = '0%';
-    bar.hidden = false;
-    fill.getBoundingClientRect(); // force reflow so transition fires
-    fill.style.transition = 'width 55s linear';
+    fill.getBoundingClientRect(); // force reflow
+    fill.style.transition = `width ${estimatedSeconds}s linear`;
     fill.style.width = '90%';
+
+    return {
+      finish() {
+        fill.style.transition = 'width 0.3s ease';
+        fill.style.width = '100%';
+        setTimeout(() => item.remove(), 600);
+      },
+      reset() { item.remove(); },
+    };
   }
 
-  function finishRubricProgress() {
-    const fill = document.getElementById('rubric-progress-fill');
-    fill.style.transition = 'width 0.3s ease';
-    fill.style.width = '100%';
-    setTimeout(() => { document.getElementById('rubric-progress').hidden = true; }, 600);
-  }
+  let _rubricBar = null;
 
-  function resetRubricProgress() {
-    document.getElementById('rubric-progress').hidden = true;
-  }
+  function startRubricProgress() { _rubricBar = _createProgressBar('Generating rubric\u2026', 55); }
+  function finishRubricProgress() { _rubricBar?.finish(); _rubricBar = null; }
+  function resetRubricProgress()  { _rubricBar?.reset();  _rubricBar = null; }
 
   // ── RUBRIC EDITOR ─────────────────────────────────────────────────────────
 
