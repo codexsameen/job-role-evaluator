@@ -843,6 +843,7 @@ body.light .drawer-backdrop { background: rgba(245,240,232,0.7); }
 }
 
 .profile-actions .evaluate-btn { flex: 1; }
+.profile-actions .qcb-cancel { padding: 12px 24px; font-size: 11px; margin-top: 12px; }
 
 @media (max-width: 480px) {
   .profile-dialog { padding: 24px 20px !important; }
