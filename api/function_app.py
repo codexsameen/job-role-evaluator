@@ -175,6 +175,7 @@ def _profile_to_candidate_string(profile):
 
 def compute_scores(content, raw_scores):
     weighted = {}
+    clamped_scores = {}
     for section in content["sections"]:
         sid         = str(section["id"])
         items       = section["items"]
@@ -182,12 +183,13 @@ def compute_scores(content, raw_scores):
         raw         = raw_scores.get(sid, [])
         clamped     = [max(0, min(int(raw[i]), items[i]["max"])) if i < len(raw) else 0
                        for i in range(len(items))]
+        clamped_scores[sid] = clamped
         actual_max  = sum(item["max"] for item in items)
         section_sum = sum(clamped)
         weighted[sid] = round((section_sum / actual_max) * max_w) if actual_max > 0 else 0
 
     total = sum(weighted.values())
-    return weighted, total
+    return weighted, total, clamped_scores
 
 
 app = func.FunctionApp()
@@ -626,7 +628,7 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     company    = model_output.get("company", "Unknown")
     role       = model_output.get("role", "Unknown")
 
-    weighted, total = compute_scores(content, raw_scores)
+    weighted, total, clamped_scores = compute_scores(content, raw_scores)
 
     result = {
         "company":   company,
@@ -634,7 +636,7 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
         "url":       url,
         "total":     total,
         "weighted":  weighted,
-        "scores":    raw_scores,
+        "scores":    clamped_scores,
         "reasoning": reasoning,
         "knockouts": knockouts,
     }
