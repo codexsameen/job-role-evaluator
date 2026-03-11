@@ -559,8 +559,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   position: fixed;
   top: 0; right: 0;
   width: 660px;
-  max-width: 95vw;
-  height: 100vh;
+  max-width: calc(100vw - env(safe-area-inset-left, 0px));
+  height: 100dvh;
   background: var(--surface);
   border-left: 1px solid var(--border);
   z-index: 400;
@@ -569,7 +569,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   overflow-y: auto;
 }
 .drawer.open { transform: translateX(0); }
-.drawer-inner { padding: 28px 24px 48px; }
+.drawer-inner { padding: 28px calc(24px + env(safe-area-inset-right, 0px)) calc(48px + env(safe-area-inset-bottom, 0px)) 24px; }
 
 .drawer-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .drawer-company { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
