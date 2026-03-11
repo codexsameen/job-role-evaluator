@@ -317,8 +317,12 @@ def delete_queue(req: func.HttpRequest) -> func.HttpResponse:
         query = "SELECT c.id FROM c WHERE c.userId = @userId"
         params = [{"name": "@userId", "value": user_id}]
         items = list(container.query_items(query=query, parameters=params))
-        for item in items:
-            container.delete_item(item=item["id"], partition_key=user_id)
+
+        BATCH_SIZE = 100  # Cosmos transactional batch limit
+        for i in range(0, len(items), BATCH_SIZE):
+            chunk = items[i:i + BATCH_SIZE]
+            operations = [("delete", item["id"], {}) for item in chunk]
+            container.execute_item_batch(batch_operations=operations, partition_key=user_id)
         return func.HttpResponse(
             json.dumps({"deleted": len(items)}),
             status_code=200,
