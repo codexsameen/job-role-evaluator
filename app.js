@@ -771,13 +771,19 @@
                   return `
                     <div class="drawer-eval-item">
                       <div class="drawer-eval-question">${escHtml(item.question)}</div>
-                      ${reason ? `<div class="drawer-eval-reasoning">${escHtml(reason)}</div>` : ''}
-                      <div class="drawer-eval-bar-wrap">
-                        <div class="drawer-eval-bar-track">
-                          <div class="drawer-eval-bar-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
+                      ${reason ? `
+                      <details class="drawer-eval-reasoning-details">
+                        <summary class="drawer-eval-reasoning-toggle">&#9655; Reasoning</summary>
+                        <div class="drawer-eval-reasoning">${escHtml(reason)}</div>
+                      </details>` : ''}
+                      <div class="drawer-eval-score-group">
+                        <div class="drawer-eval-label">${escHtml(label)}</div>
+                        <div class="drawer-eval-bar-wrap">
+                          <div class="drawer-eval-bar-track">
+                            <div class="drawer-eval-bar-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
+                          </div>
+                          <span class="drawer-eval-score-num">${score}/${item.max}</span>
                         </div>
-                        <span class="drawer-eval-score-num">${score}/${item.max}</span>
-                        <span class="drawer-eval-label">${escHtml(label)}</span>
                       </div>
                     </div>`;
                 }).join('')}
