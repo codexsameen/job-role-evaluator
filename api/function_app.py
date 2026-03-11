@@ -338,6 +338,17 @@ def get_profile(req: func.HttpRequest) -> func.HttpResponse:
     try:
         profiles = get_profiles_container()
         doc = profiles.read_item(item=user_id, partition_key=user_id)
+
+        # Heal stuck "generating" state if thread was lost (e.g. host recycle)
+        if doc.get("rubricStatus") == "generating":
+            started = doc.get("rubricGenerationStartedAt")
+            if started:
+                age = datetime.now(timezone.utc) - datetime.fromisoformat(started)
+                if age.total_seconds() > 300:  # 5 minutes
+                    doc["rubricStatus"] = "error"
+                    doc.pop("rubricGenerationStartedAt", None)
+                    profiles.upsert_item(body=doc)
+
         return func.HttpResponse(json.dumps(doc), status_code=200, mimetype="application/json")
     except Exception as e:
         if "404" in str(e) or "NotFound" in str(e):
@@ -463,6 +474,7 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
         # Mark as generating and return 202 immediately so the HTTP proxy
         # does not time out waiting for the LLM call to complete.
         profile["rubricStatus"] = "generating"
+        profile["rubricGenerationStartedAt"] = datetime.now(timezone.utc).isoformat()
         profiles.upsert_item(body=profile)
 
         def _do_generation():
