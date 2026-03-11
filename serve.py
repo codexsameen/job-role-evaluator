@@ -5,6 +5,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from flask import Flask, request, Response
 import requests
 
+FUNC_HOST   = os.environ.get('FUNC_HOST', 'http://localhost:7071')
 AUTH_COOKIE = os.environ.get('AUTH_COOKIE', '')
 
 app = Flask(__name__, static_folder='.', static_url_path='')
@@ -34,9 +35,10 @@ def auth_proxy(path):
 
 @app.route('/api/<path:path>', methods=['GET','POST','DELETE','PUT','PATCH'])
 def proxy(path):
-    url = f'https://job-eval.tools.sameen.dev/api/{path}'
+    url = f'{FUNC_HOST}/api/{path}'
     headers = {k: v for k, v in request.headers if k != 'Host'}
-    headers['Cookie'] = AUTH_COOKIE
+    if AUTH_COOKIE:
+        headers['Cookie'] = AUTH_COOKIE
     resp = requests.request(
         method=request.method,
         url=url,
