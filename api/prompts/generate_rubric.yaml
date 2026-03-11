@@ -27,31 +27,31 @@ user: |
   - Include 4–6 knockout flags relevant to this candidate's situation
 
   Format example (follow this schema exactly):
-  {
-    "meta": {
+  {{
+    "meta": {{
       "eyebrow": "<Role Title> · <Location> · <Year>",
       "title": "Role <em>Evaluator</em>",
       "subtitle": "Score job descriptions against your priorities."
-    },
+    }},
     "knockouts": [
-      {"label": "<short flag name>", "detail": "<one sentence explaining the disqualifier>"}
+      {{"label": "<short flag name>", "detail": "<one sentence explaining the disqualifier>"}}
     ],
     "sections": [
-      {
+      {{
         "id": 1,
         "title": "<Section Title>",
         "weight": 35,
         "items": [
-          {
+          {{
             "question": "<question to score from JD>",
             "signals": "<comma-separated signals to look for>",
             "max": 3,
             "labels": ["<score 0 label>", "<score 1 label>", "<score 2 label>", "<score 3 label>"]
-          }
+          }}
         ]
-      }
+      }}
     ]
-  }
+  }}
 
   The current year is 2026.
 
