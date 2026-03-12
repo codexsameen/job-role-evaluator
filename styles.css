@@ -659,6 +659,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
 .drawer-verdict-pending { color: var(--muted); font-size: 18px; }
 
+.drawer-section .verdict-badge { font-size: 10px; padding: 5px 12px; letter-spacing: 0.08em; }
+
 .drawer-total-track { position: relative; height: 4px; background: var(--border); margin: 12px 0 20px; overflow: visible; }
 .drawer-total-fill  { height: 100%; transition: width 0.4s ease; }
 .drawer-total-label { position: absolute; right: 0; top: 8px; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
