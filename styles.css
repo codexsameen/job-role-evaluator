@@ -506,8 +506,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
 .col-company { color: var(--muted); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; }
 .col-role    { color: var(--text);  font-family: 'Fraunces', serif; font-size: 14px; font-weight: 300; }
-.col-score   { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; text-align: right; white-space: nowrap; }
-.col-verdict { font-size: 10px; color: var(--muted); white-space: nowrap; }
+.col-score   { font-size: 10px; color: var(--muted); text-align: right; white-space: nowrap; }
+.col-verdict { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 300; white-space: nowrap; }
 .col-interest, .col-status { white-space: nowrap; }
 .col-added   { font-size: 10px; color: var(--muted); white-space: nowrap; }
 
@@ -634,8 +634,8 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-option-btn.active { background: var(--surface); }
 
 .drawer-score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
-.drawer-total   { font-family: 'Fraunces', serif; font-size: 40px; font-weight: 600; line-height: 1; }
-.drawer-verdict { font-size: 12px; color: var(--muted); }
+.drawer-total   { font-size: 11px; color: var(--muted); }
+.drawer-verdict { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 300; line-height: 1; }
 
 .drawer-total-track { height: 4px; background: var(--border); margin-bottom: 20px; overflow: hidden; }
 .drawer-total-fill  { height: 100%; transition: width 0.4s ease; }

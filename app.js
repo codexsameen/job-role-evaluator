@@ -749,8 +749,8 @@ const PAGE_SIZE = 25;
       <div class="drawer-section">
         <div class="drawer-section-label">Score</div>
         <div class="drawer-score-row">
-          <span class="drawer-total ${entry.evalStatus === 'pending' ? '' : getVerdictClass(entry.total)}">${entry.evalStatus === 'pending' ? '—' : entry.total}</span>
-          <span class="drawer-verdict">${entry.evalStatus === 'pending' ? '' : getVerdictLabel(entry.total)}</span>
+          <span class="drawer-verdict ${entry.evalStatus === 'pending' ? '' : getVerdictClass(entry.total)}">${entry.evalStatus === 'pending' ? '—' : getVerdictLabel(entry.total)}</span>
+          <span class="drawer-total">${entry.evalStatus === 'pending' ? '' : entry.total}</span>
         </div>
         ${entry.evalStatus !== 'pending' ? `
         <div class="drawer-total-track">
