@@ -767,7 +767,7 @@ const PAGE_SIZE = 25;
 
       ${entry.evalStatus === 'evaluated' && entry.knockouts?.length ? `
         <div class="drawer-section">
-          <div class="drawer-section-label">Knockout Flags</div>
+          <div class="drawer-section-label">Red Flags</div>
           <div class="drawer-ko-list">
             ${CONTENT.knockouts.map((ko, i) => `
               <div class="drawer-ko-item">
@@ -776,7 +776,7 @@ const PAGE_SIZE = 25;
               </div>
             `).join('')}
           </div>
-          ${entry.knockouts.some(Boolean) ? `<div class="drawer-ko-warning">One or more knockout flags raised.</div>` : ''}
+          ${entry.knockouts.some(Boolean) ? `<div class="drawer-ko-warning">One or more red flags raised.</div>` : ''}
         </div>
       ` : ''}
 
