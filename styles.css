@@ -342,7 +342,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   opacity: 0;
   pointer-events: none;
   transition: all 0.25s ease;
-  z-index: 100;
+  z-index: 160;
 }
 .queue-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
