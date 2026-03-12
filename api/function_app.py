@@ -633,8 +633,6 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     company    = model_output.get("company", "Unknown")
     role       = model_output.get("role", "Unknown")
 
-    logging.info("raw_scores: %s", raw_scores)
-
     expected_ids = {str(s["id"]) for s in content["sections"]}
     actual_ids   = set(raw_scores.keys())
     if expected_ids != actual_ids:
