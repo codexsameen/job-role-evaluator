@@ -550,11 +550,11 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .col-eval     { white-space: nowrap; }
 
 @media (max-width: 480px) {
-  /* Hide low-priority columns */
+  /* Hide low-priority columns — show only Company, Role, Verdict */
   .pipeline-table thead th:nth-child(4),
   .pipeline-table thead th:nth-child(5),
-  .pipeline-table thead th:nth-child(7) { display: none; }
-  .col-verdict, .col-interest, .col-added { display: none; }
+  .pipeline-table thead th:nth-child(6) { display: none; }
+  .col-interest, .col-status, .col-added { display: none; }
 
   /* Tighter cell padding */
   .pipeline-table thead th { padding: 6px 6px; }
