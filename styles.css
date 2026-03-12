@@ -184,6 +184,22 @@ h1 em { font-style: italic; color: var(--accent); }
 .score-weak   { color: var(--t3); }
 .score-pass   { color: var(--muted); }
 
+/* ── VERDICT BADGE ───────────────────────────────────────────────────────── */
+
+.verdict-badge {
+  display: inline-block;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+.verdict-badge.score-strong { border-color: var(--accent);  color: var(--accent); }
+.verdict-badge.score-apply  { border-color: var(--accent2); color: var(--accent2); }
+.verdict-badge.score-weak   { border-color: var(--t3);      color: var(--t3); }
+.verdict-badge.score-pass   { border-color: var(--muted);   color: var(--muted); }
+
 /* ── NOTES ───────────────────────────────────────────────────────────────── */
 
 textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; }
@@ -506,8 +522,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
 .col-company { color: var(--muted); font-size: 11px; letter-spacing: 0.04em; white-space: nowrap; }
 .col-role    { color: var(--text);  font-family: 'Fraunces', serif; font-size: 14px; font-weight: 300; }
-.col-score   { font-size: 10px; color: var(--muted); text-align: right; white-space: nowrap; }
-.col-verdict { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 300; white-space: nowrap; }
+.col-verdict { white-space: nowrap; }
 .col-interest, .col-status { white-space: nowrap; }
 .col-added   { font-size: 10px; color: var(--muted); white-space: nowrap; }
 
@@ -548,8 +563,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   /* Constrain company so it doesn't crowd role */
   .col-company { max-width: 72px; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Slightly smaller score to reclaim space */
-  .col-score { font-size: 16px; }
 }
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); }
@@ -633,12 +646,11 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-option-btn[data-status="rejected"].active     { border-color: var(--danger);        color: var(--danger); }
 .status-option-btn.active { background: var(--surface); }
 
-.drawer-score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
-.drawer-total   { font-size: 11px; color: var(--muted); }
-.drawer-verdict { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 300; line-height: 1; }
+.drawer-verdict-pending { color: var(--muted); font-size: 18px; }
 
-.drawer-total-track { height: 4px; background: var(--border); margin-bottom: 20px; overflow: hidden; }
+.drawer-total-track { position: relative; height: 4px; background: var(--border); margin: 12px 0 20px; overflow: visible; }
 .drawer-total-fill  { height: 100%; transition: width 0.4s ease; }
+.drawer-total-label { position: absolute; right: 0; top: 8px; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
 
 .drawer-dims { display: flex; flex-direction: column; gap: 10px; }
 

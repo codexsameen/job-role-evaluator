@@ -551,6 +551,12 @@ const PAGE_SIZE = 25;
     return `<span class="status-badge ${cls}">${label}</span>`;
   }
 
+  function verdictBadge(total) {
+    const cls   = getVerdictClass(total);
+    const label = getVerdictLabel(total);
+    return `<span class="verdict-badge ${cls}">${label}</span>`;
+  }
+
   // ── TABLE RENDER ──────────────────────────────────────────────────────────
 
   function renderSummary() {
@@ -659,7 +665,6 @@ const PAGE_SIZE = 25;
           <tr>
             <th>Company</th>
             <th>Role</th>
-            <th>Score</th>
             <th>Verdict</th>
             <th>Interest</th>
             <th>Status</th>
@@ -671,8 +676,7 @@ const PAGE_SIZE = 25;
             <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
               <td class="col-company">${escHtml(e.company)}</td>
               <td class="col-role">${escHtml(e.role)}</td>
-              <td class="col-score ${e.evalStatus === 'pending' ? '' : getVerdictClass(e.total)}">${e.evalStatus === 'pending' ? '—' : e.total}</td>
-              <td class="col-verdict">${e.evalStatus === 'pending' ? '' : getVerdictLabel(e.total)}</td>
+              <td class="col-verdict">${e.evalStatus === 'pending' ? '' : verdictBadge(e.total)}</td>
               <td class="col-interest">${e.interest ? interestBadge(e.interest) : '—'}</td>
               <td class="col-status">${statusBadge(e.status)}</td>
               <td class="col-added">${formatDate(e.addedAt)}</td>
@@ -747,22 +751,21 @@ const PAGE_SIZE = 25;
       </div>
 
       <div class="drawer-section">
-        <div class="drawer-section-label">Score</div>
-        <div class="drawer-score-row">
-          <span class="drawer-verdict ${entry.evalStatus === 'pending' ? '' : getVerdictClass(entry.total)}">${entry.evalStatus === 'pending' ? '—' : getVerdictLabel(entry.total)}</span>
-          <span class="drawer-total">${entry.evalStatus === 'pending' ? '' : entry.total}</span>
-        </div>
-        ${entry.evalStatus !== 'pending' ? `
-        <div class="drawer-total-track">
-          <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
-        </div>
-        <div class="drawer-dims">
-          ${CONTENT.sections.map(s => `
-            <div class="drawer-dim">
-              <span class="drawer-dim-label">${dimLabels[s.id]}</span>
-              <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
-            </div>`).join('')}
-        </div>` : ''}
+        <div class="drawer-section-label">Verdict</div>
+        ${entry.evalStatus === 'pending' ? `<span class="drawer-verdict-pending">—</span>` : `
+          ${verdictBadge(entry.total)}
+          <div class="drawer-total-track">
+            <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
+            <span class="drawer-total-label">${entry.total}</span>
+          </div>
+          <div class="drawer-dims">
+            ${CONTENT.sections.map(s => `
+              <div class="drawer-dim">
+                <span class="drawer-dim-label">${dimLabels[s.id]}</span>
+                <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
+              </div>`).join('')}
+          </div>
+        `}
       </div>
 
       ${entry.evalStatus === 'evaluated' && entry.knockouts?.length ? `
