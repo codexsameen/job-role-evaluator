@@ -825,7 +825,7 @@ const PAGE_SIZE = 25;
       ${entry.jdText ? `
       <div class="drawer-section">
         <details class="drawer-jd-details">
-          <summary class="drawer-jd-toggle">Job Description</summary>
+          <summary class="drawer-jd-toggle">&#9655; Job Description</summary>
           <div class="drawer-jd-text">${escHtml(entry.jdText)}</div>
         </details>
       </div>` : ''}
