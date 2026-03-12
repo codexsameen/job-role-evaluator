@@ -336,6 +336,7 @@ const PAGE_SIZE = 25;
       company:    '—',
       role:       'Evaluating…',
       url:        url || '',
+      jdText:     jdText,
       total:      0,
       weighted:   Object.fromEntries(CONTENT.sections.map(s => [s.id, 0])),
       scores:     {},
@@ -817,6 +818,14 @@ const PAGE_SIZE = 25;
           }).join('')}
         </div>
       ` : ''}
+
+      ${entry.jdText ? `
+      <div class="drawer-section">
+        <details class="drawer-jd-details">
+          <summary class="drawer-jd-toggle">Job Description</summary>
+          <div class="drawer-jd-text">${escHtml(entry.jdText)}</div>
+        </details>
+      </div>` : ''}
 
       <div class="drawer-section">
         <div class="drawer-section-label">Notes</div>

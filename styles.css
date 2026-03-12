@@ -655,6 +655,13 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .drawer-notes { font-size: 12px; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
 .drawer-actions { border-top: 1px solid var(--border); padding-top: 20px; }
 
+/* JD collapsible in drawer */
+.drawer-jd-details { width: 100%; }
+.drawer-jd-details summary { list-style: none; cursor: pointer; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; user-select: none; }
+.drawer-jd-details summary::-webkit-details-marker { display: none; }
+.drawer-jd-details[open] summary { color: var(--accent); }
+.drawer-jd-text { font-size: 12px; color: var(--muted); line-height: 1.7; white-space: pre-wrap; padding: 10px 12px; border-left: 2px solid var(--border); margin-top: 8px; max-height: 400px; overflow-y: auto; }
+
 /* Knockout flags in drawer */
 .drawer-ko-list { display: flex; flex-direction: column; }
 .drawer-ko-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
