@@ -136,12 +136,15 @@ def build_prompt(content, jd_text, candidate_profile=None):
         for i, ko in enumerate(content["knockouts"])
     )
 
+    section_ids = ", ".join(str(s["id"]) for s in content["sections"])
+
     template = _load_yaml_prompt("evaluate.yaml")
     user_message = template["user"].format(
         candidate_profile=candidate_profile,
         jd_text=jd_text,
         sections_text=sections_text,
         knockout_text=knockout_text,
+        section_ids=section_ids,
     )
     return template["system"], user_message
 
@@ -615,6 +618,8 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(f"AI service error: {e}", status_code=502)
 
     raw_text = completion.choices[0].message.content.strip()
+    
+    logging.info("Model raw output: %s", raw_text)
 
     try:
         model_output = json.loads(raw_text)
@@ -628,7 +633,18 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     company    = model_output.get("company", "Unknown")
     role       = model_output.get("role", "Unknown")
 
+    logging.info("raw_scores: %s", raw_scores)
+
+    expected_ids = {str(s["id"]) for s in content["sections"]}
+    actual_ids   = set(raw_scores.keys())
+    if expected_ids != actual_ids:
+        logging.error("Score key mismatch: expected %s, got %s", expected_ids, actual_ids)
+        return func.HttpResponse("AI returned malformed score keys", status_code=502)
+
     weighted, total, clamped_scores = compute_scores(content, raw_scores)
+
+    if total == 0:
+        logging.warning("Total score is 0 for %s — %s. Possible scoring failure.", company, role)
 
     result = {
         "company":   company,

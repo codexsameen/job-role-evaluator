@@ -32,15 +32,16 @@ user: |
   ---
 
   Respond ONLY with a JSON object in exactly this format, no preamble, no markdown.
-  Each section array must have exactly the number of elements shown in the section header:
+  Each section array must have exactly the number of elements shown in the section header.
+  Use each section's integer id as the key. The valid section ids are: {section_ids}.
   {{
     "company": "<extracted company name>",
     "role": "<extracted role title>",
     "scores": {{
-      "<section_id>": [<one integer per item, in order>]
+      "1": [<one integer per item, in order>]
     }},
     "reasoning": {{
-      "<section_id>": ["<one sentence per item, in order>"]
+      "1": ["<one sentence per item, in order>"]
     }},
     "knockouts": [<true/false per knockout in order>]
   }}
