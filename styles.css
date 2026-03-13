@@ -372,6 +372,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   z-index: 160;
 }
 .queue-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.queue-toast.error { background: var(--danger); color: #fff; }
 
 /* ── JD INPUT ────────────────────────────────────────────────────────────── */
 

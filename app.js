@@ -903,16 +903,24 @@ const PAGE_SIZE = 25;
   // ── QUEUE MUTATIONS ───────────────────────────────────────────────────────
 
   async function removeFromQueue(id) {
+    // Optimistic update — close drawer and remove from local state immediately
+    const removed = pipelineState.queue.find(e => e.id === id);
+    pipelineState.queue = pipelineState.queue.filter(e => e.id !== id);
+    if (pipelineState.activeId === id) closeDrawer();
+    renderSummary();
+    renderTable();
+    showToast('Removed from pipeline');
+
     try {
       const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`DELETE /api/queue/${id} ${res.status}`);
-      pipelineState.queue = pipelineState.queue.filter(e => e.id !== id);
-      if (pipelineState.activeId === id) closeDrawer();
-      renderSummary();
-      renderTable();
     } catch (err) {
       console.error('removeFromQueue failed:', err);
-      showToast('Failed to remove — please try again');
+      // Restore the entry on failure
+      if (removed) pipelineState.queue.push(removed);
+      renderSummary();
+      renderTable();
+      showToast('Failed to remove — please try again', true);
     }
   }
 
@@ -1008,9 +1016,10 @@ const PAGE_SIZE = 25;
   // ── TOAST ─────────────────────────────────────────────────────────────────
 
   let toastTimer;
-  function showToast(msg) {
+  function showToast(msg, error = false) {
     const el = document.getElementById('queue-toast');
     el.textContent = msg;
+    el.classList.toggle('error', error);
     el.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
