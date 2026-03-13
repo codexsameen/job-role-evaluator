@@ -5,6 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
 ![Azure Functions](https://img.shields.io/badge/Azure_Functions-serverless-0078D4?logo=azure-functions&logoColor=white)
 ![Azure Static Web Apps](https://img.shields.io/badge/Azure_Static_Web_Apps-deployed-0078D4?logo=microsoft-azure&logoColor=white)
+![Built with love](https://forthebadge.com/badges/built-with-love.svg)
 
 <!-- demo gif -->
 
