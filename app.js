@@ -347,6 +347,11 @@ const PAGE_SIZE = 25;
     renderTable();
     showToast('Role queued for evaluation');
 
+    // Clear inputs as soon as the role is queued
+    document.getElementById('jd-text').value = '';
+    document.getElementById('jd-url').value  = '';
+    setFetchBtnState('idle');
+
     const evalBar = _createProgressBar('Evaluating role\u2026', 10);
     try {
       const res = await fetch('/api/evaluate', {
@@ -374,11 +379,6 @@ const PAGE_SIZE = 25;
       evalBar.finish();
       renderSummary();
       renderTable();
-
-      // Clear inputs for next evaluation
-      document.getElementById('jd-text').value = '';
-      document.getElementById('jd-url').value  = '';
-      setFetchBtnState('idle');
 
     } catch (err) {
       console.error('runEvaluation failed:', err);
