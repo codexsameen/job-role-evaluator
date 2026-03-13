@@ -380,6 +380,12 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .jd-input-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
 @media (max-width: 480px) { .jd-input-row { grid-template-columns: 1fr; } }
 
+/* Prevent iOS Safari auto-zoom on input focus (triggered when font-size < 16px) */
+@media (max-width: 480px) {
+  input[type="text"],
+  textarea { font-size: 16px; }
+}
+
 .field-group { display: flex; flex-direction: column; gap: 6px; }
 .jd-textarea { min-height: 140px; }
 
