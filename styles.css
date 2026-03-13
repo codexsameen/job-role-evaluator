@@ -923,3 +923,11 @@ body.light .drawer-backdrop { background: rgba(245,240,232,0.7); }
 @media (max-width: 480px) {
   .rubric-dialog { padding: 24px 20px !important; }
 }
+
+.site-footer {
+  text-align: center;
+  padding: 16px;
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
