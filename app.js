@@ -115,7 +115,7 @@ const PAGE_SIZE = 25;
       if (!res.ok) {
         const msg = await res.text();
         setFetchBtnState('error');
-        showErrorDialog(msg || 'Could not extract a job description from that URL.');
+        showToast(msg || 'Could not extract a job description from that URL.', true);
         return;
       }
 
@@ -125,33 +125,12 @@ const PAGE_SIZE = 25;
     } catch (err) {
       console.error('fetchJdFromUrl failed:', err);
       setFetchBtnState('error');
-      showErrorDialog('Failed to fetch the job posting. Check your connection and try again.');
+      showToast('Failed to fetch the job posting. Check your connection and try again.', true);
     } finally {
       jdArea.placeholder = 'Paste the full job description here...';
     }
   }
 
-  // ── ERROR DIALOG ──────────────────────────────────────────────────────────
-
-  function showErrorDialog(msg) {
-    document.getElementById('eval-spinner').classList.add('hidden');
-    document.getElementById('eval-overlay-title').textContent = 'Could Not Fetch Posting';
-    document.getElementById('eval-status').textContent        = msg;
-    document.getElementById('eval-status').style.color       = 'var(--danger)';
-    document.getElementById('eval-dismiss-btn').style.display = '';
-    document.getElementById('eval-overlay').classList.add('visible');
-  }
-
-  function closeErrorDialog() {
-    const overlay = document.getElementById('eval-overlay');
-    overlay.classList.remove('visible');
-    // Restore spinner state for next evaluation
-    document.getElementById('eval-spinner').classList.remove('hidden');
-    document.getElementById('eval-overlay-title').textContent  = 'Evaluating Role';
-    document.getElementById('eval-status').textContent         = 'Reading job description...';
-    document.getElementById('eval-status').style.color         = '';
-    document.getElementById('eval-dismiss-btn').style.display  = 'none';
-  }
 
   // ── PROFILE MODAL ─────────────────────────────────────────────────────────
 

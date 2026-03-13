@@ -496,22 +496,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .eval-status { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); min-height: 18px; transition: opacity 0.3s ease; }
 .eval-status.fade { opacity: 0; }
 
-.eval-dismiss-btn {
-  display: none;
-  margin-top: 24px;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  padding: 6px 20px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.eval-dismiss-btn:hover { border-color: var(--accent); color: var(--accent); }
-
 /* ── PIPELINE TABLE ──────────────────────────────────────────────────────── */
 
 .pipeline-table { width: 100%; border-collapse: collapse; font-size: 12px; }
