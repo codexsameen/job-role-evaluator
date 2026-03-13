@@ -659,6 +659,12 @@ const PAGE_SIZE = 25;
     const page = pipelineState.page;
     const pageItems = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
+    // On mobile render swipeable cards instead of a table
+    if (window.matchMedia('(max-width: 480px)').matches) {
+      renderCards(pageItems, activeId, container, totalPages, page);
+      return;
+    }
+
     container.innerHTML = `
       <table class="pipeline-table">
         <thead>
@@ -690,6 +696,98 @@ const PAGE_SIZE = 25;
         <span class="pagination-info">Page ${page + 1} of ${totalPages}</span>
         <button class="pagination-btn" onclick="goToPage(${page + 1})" ${page >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
       </div>` : ''}`;
+  }
+
+  function renderCards(pageItems, activeId, container, totalPages, page) {
+    const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path>
+      <path d="M10 11v6M14 11v6"></path>
+      <path d="M9 6V4h6v2"></path>
+    </svg>`;
+    container.innerHTML = `
+      <div class="pipeline-cards">
+        ${pageItems.map(e => `
+          <div class="pipeline-card${activeId === e.id ? ' active' : ''}" data-id="${e.id}" onclick="openDrawer('${e.id}')">
+            <div class="card-content">
+              <div class="card-text">
+                <span class="card-company">${escHtml(e.company)}</span>
+                <span class="card-role">${escHtml(e.role)}</span>
+              </div>
+              <div class="card-verdict">${e.evalStatus === 'pending' ? '' : verdictBadge(e.total)}</div>
+            </div>
+            <div class="card-delete-zone">${trashIcon}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${totalPages > 1 ? `
+      <div class="pagination">
+        <button class="pagination-btn" onclick="goToPage(${page - 1})" ${page === 0 ? 'disabled' : ''}>← Prev</button>
+        <span class="pagination-info">Page ${page + 1} of ${totalPages}</span>
+        <button class="pagination-btn" onclick="goToPage(${page + 1})" ${page >= totalPages - 1 ? 'disabled' : ''}>Next →</button>
+      </div>` : ''}
+    `;
+    attachSwipeHandlers();
+  }
+
+  function attachSwipeHandlers() {
+    const SWIPE_THRESHOLD = 60;
+    const REVEAL_WIDTH    = 72;
+
+    document.querySelectorAll('.pipeline-card').forEach(card => {
+      const content = card.querySelector('.card-content');
+      const id      = card.dataset.id;
+      let startX = 0, startY = 0, currentX = 0;
+      let axisLocked = false, isHorizontal = false, didSwipe = false;
+
+      card.addEventListener('touchstart', e => {
+        startX       = e.touches[0].clientX;
+        startY       = e.touches[0].clientY;
+        currentX     = 0;
+        axisLocked   = false;
+        isHorizontal = false;
+        didSwipe     = false;
+        content.style.transition = 'none';
+      }, { passive: true });
+
+      card.addEventListener('touchmove', e => {
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+
+        if (!axisLocked) {
+          axisLocked   = true;
+          isHorizontal = Math.abs(dx) > Math.abs(dy);
+        }
+        if (!isHorizontal) return;
+
+        e.preventDefault();
+        currentX = Math.min(0, Math.max(-REVEAL_WIDTH, dx));
+        content.style.transform = `translateX(${currentX}px)`;
+        if (Math.abs(currentX) > 5) didSwipe = true;
+      }, { passive: false });
+
+      card.addEventListener('touchend', () => {
+        if (!isHorizontal) return;
+
+        if (currentX < -SWIPE_THRESHOLD) {
+          content.style.transition = 'transform 0.2s ease';
+          content.style.transform  = 'translateX(-100%)';
+          setTimeout(() => removeFromQueue(id), 200);
+        } else {
+          content.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+          content.style.transform  = 'translateX(0)';
+        }
+      }, { passive: true });
+
+      // Suppress the click that fires after a swipe gesture
+      card.addEventListener('click', e => {
+        if (didSwipe) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+          didSwipe = false;
+        }
+      }, true);
+    });
   }
 
   function formatDate(iso) {

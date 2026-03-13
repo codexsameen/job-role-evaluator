@@ -575,6 +575,69 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   /* Constrain company so it doesn't crowd role */
   .col-company { max-width: 72px; overflow: hidden; text-overflow: ellipsis; }
 
+  /* ── Swipeable card list (replaces table on mobile) ─────────────────────── */
+
+  .pipeline-cards { display: flex; flex-direction: column; gap: 1px; }
+
+  .pipeline-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .card-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 10px;
+    background: var(--bg);
+    will-change: transform;
+  }
+  .pipeline-card.active .card-content { background: var(--surface2); }
+
+  .card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .card-company {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card-role {
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-verdict { flex-shrink: 0; }
+
+  .card-delete-zone {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 72px;
+    background: var(--danger);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+  }
+  .card-delete-zone svg { width: 22px; height: 22px; }
+
 }
 
 .pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 0; border-top: 1px solid var(--border); }
