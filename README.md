@@ -232,4 +232,4 @@ Please keep PRs focused — one feature or fix per PR. Include a short descripti
 
 ---
 
-_Made with love from London_
+_Made with ❤️ from London_
