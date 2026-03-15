@@ -581,8 +581,11 @@ const PAGE_SIZE = 25;
 
     if (queue.length === 0) { container.innerHTML = ''; return; }
 
-    const avgScore = queue.length
-      ? Math.round(queue.reduce((s, e) => s + displayTotal(e), 0) / queue.length)
+    const hasFilters = filters.interest.size || filters.verdict.size || filters.status.size;
+    const displayed = hasFilters ? getFiltered() : queue;
+
+    const avgScore = displayed.length
+      ? Math.round(displayed.reduce((s, e) => s + displayTotal(e), 0) / displayed.length)
       : 0;
 
     const statusCounts = {};
@@ -592,11 +595,10 @@ const PAGE_SIZE = 25;
     });
 
     const activeStatus = filters.status;
-    const hasFilters = filters.interest.size || filters.verdict.size || filters.status.size;
 
     container.innerHTML = `
       <div class="summary-stats">
-        <span class="summary-stat"><span class="summary-stat-val">${queue.length}</span> role${queue.length !== 1 ? 's' : ''}</span>
+        <span class="summary-stat"><span class="summary-stat-val">${displayed.length}</span> role${displayed.length !== 1 ? 's' : ''}</span>
         <span class="summary-divider">·</span>
         <span class="summary-stat">avg <span class="summary-stat-val">${avgScore}</span></span>
       </div>
