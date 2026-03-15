@@ -619,7 +619,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   .card-badges {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     overflow: hidden;
     gap: 5px;
