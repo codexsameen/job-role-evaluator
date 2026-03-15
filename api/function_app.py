@@ -324,6 +324,25 @@ def post_queue(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
+# GET /api/queue/{id}
+# ---------------------------------------------------------------------------
+@app.route(route="queue/{id}", methods=["GET"])
+def get_queue_item(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    item_id = req.route_params.get("id")
+    try:
+        container = get_container()
+        item = container.read_item(item=item_id, partition_key=user_id)
+        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Item not found", status_code=404)
+        logging.exception("GET /api/queue/{id} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
 # PATCH /api/queue/{id}
 # ---------------------------------------------------------------------------
 @app.route(route="queue/{id}", methods=["PATCH"])
@@ -647,85 +666,100 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     except ValueError:
         return func.HttpResponse("Invalid JSON body", status_code=400)
 
-    jd_text = body.get("jd_text", "").strip()
-    url     = body.get("url", "").strip()
+    jd_text  = body.get("jd_text", "").strip()
+    url      = body.get("url", "").strip()
+    queue_id = body.get("queue_id", "").strip()
 
     if not jd_text:
         return func.HttpResponse("jd_text is required", status_code=400)
+    if not queue_id:
+        return func.HttpResponse("queue_id is required", status_code=400)
 
-    # Load profile + rubric from Cosmos; fall back to disk content.json
+    # Load profile + rubric from Cosmos
     profile = {}
     try:
         profiles = get_profiles_container()
         profile = profiles.read_item(item=user_id, partition_key=user_id)
     except Exception:
-        pass  # no profile yet — use defaults
+        pass
 
     if not profile.get("rubric"):
         return func.HttpResponse("No rubric found. Please generate a rubric from your profile first.", status_code=400)
 
-    content = profile["rubric"]
-
+    content           = profile["rubric"]
     candidate_profile = _profile_to_candidate_string(profile) or None
     system_message, user_message = build_prompt(content, jd_text, candidate_profile)
 
-    try:
-        client     = get_openai_client()
-        deployment = os.environ["OPENAI_DEPLOYMENT"]
-        completion = client.chat.completions.create(
-            model=deployment,
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user",   "content": user_message},
-            ],
-        )
-    except Exception as e:
-        logging.exception("OpenAI call failed")
-        return func.HttpResponse(f"AI service error: {e}", status_code=502)
+    client     = get_openai_client()
+    deployment = os.environ["OPENAI_DEPLOYMENT"]
 
-    raw_text = completion.choices[0].message.content.strip()
-    
-    logging.info("Model raw output: %s", raw_text)
+    def _do_evaluation():
+        try:
+            completion = client.chat.completions.create(
+                model=deployment,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user",   "content": user_message},
+                ],
+            )
+            raw_text = completion.choices[0].message.content.strip()
+            logging.info("Model raw output: %s", raw_text)
 
-    try:
-        model_output = json.loads(raw_text)
-    except json.JSONDecodeError:
-        logging.error("Model returned non-JSON: %s", raw_text)
-        return func.HttpResponse("AI returned invalid response", status_code=502)
+            try:
+                model_output = json.loads(raw_text)
+            except json.JSONDecodeError:
+                logging.error("Model returned non-JSON: %s", raw_text)
+                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+                return
 
-    raw_scores = model_output.get("scores", {})
-    reasoning  = model_output.get("reasoning", {})
-    knockouts  = model_output.get("knockouts", [])
-    company    = model_output.get("company", "Unknown")
-    role       = model_output.get("role", "Unknown")
+            raw_scores = model_output.get("scores", {})
+            reasoning  = model_output.get("reasoning", {})
+            knockouts  = model_output.get("knockouts", [])
+            company    = model_output.get("company", "Unknown")
+            role       = model_output.get("role", "Unknown")
 
-    expected_ids = {str(s["id"]) for s in content["sections"]}
-    actual_ids   = set(raw_scores.keys())
-    if expected_ids != actual_ids:
-        logging.error("Score key mismatch: expected %s, got %s", expected_ids, actual_ids)
-        return func.HttpResponse("AI returned malformed score keys", status_code=502)
+            expected_ids = {str(s["id"]) for s in content["sections"]}
+            actual_ids   = set(raw_scores.keys())
+            if expected_ids != actual_ids:
+                logging.error("Score key mismatch: expected %s, got %s", expected_ids, actual_ids)
+                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+                return
 
-    weighted, total, clamped_scores = compute_scores(content, raw_scores)
+            weighted, total, clamped_scores = compute_scores(content, raw_scores)
 
-    if total == 0:
-        logging.warning("Total score is 0 for %s — %s. Possible scoring failure.", company, role)
+            if total == 0:
+                logging.warning("Total score is 0 for %s — %s. Possible scoring failure.", company, role)
 
-    result = {
-        "company":   company,
-        "role":      role,
-        "url":       url,
-        "total":     total,
-        "weighted":  weighted,
-        "scores":    clamped_scores,
-        "reasoning": reasoning,
-        "knockouts": knockouts,
-    }
+            patch = {
+                "company":    company,
+                "role":       role,
+                "url":        url,
+                "total":      total,
+                "weighted":   weighted,
+                "scores":     clamped_scores,
+                "reasoning":  reasoning,
+                "knockouts":  knockouts,
+                "evalStatus": "evaluated",
+            }
+            _patch_queue_item(user_id, queue_id, patch)
+            logging.info("Evaluation complete for queue item %s", queue_id)
 
-    return func.HttpResponse(
-        json.dumps(result),
-        status_code=200,
-        mimetype="application/json",
-    )
+        except Exception:
+            logging.exception("Background evaluation failed for queue item %s", queue_id)
+            try:
+                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+            except Exception:
+                pass
+
+    threading.Thread(target=_do_evaluation, daemon=True).start()
+    return func.HttpResponse(status_code=202)
+
+
+def _patch_queue_item(user_id: str, item_id: str, patch: dict):
+    container = get_container()
+    item = container.read_item(item=item_id, partition_key=user_id)
+    item.update(patch)
+    container.replace_item(item=item_id, body=item)
 
 
 # ---------------------------------------------------------------------------

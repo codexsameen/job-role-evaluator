@@ -359,31 +359,11 @@ const PAGE_SIZE = 25;
       const res = await fetch('/api/evaluate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ jd_text: jdText, url }),
+        body:    JSON.stringify({ jd_text: jdText, url, queue_id: pendingEntry.id }),
       });
       if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
-      const result = await res.json();
-
-      const patch = {
-        company:    result.company,
-        role:       result.role,
-        url:        result.url || url || '',
-        total:      result.total,
-        weighted:   result.weighted,
-        scores:     result.scores,
-        reasoning:  result.reasoning,
-        knockouts:  result.knockouts,
-        evalStatus: 'evaluated',
-      };
-      await patchEntry(pendingEntry.id, patch);
-      const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
-      if (entry) Object.assign(entry, patch);
-      evalBar.finish();
-      renderSummary();
-      renderTable();
-
     } catch (err) {
-      console.error('runEvaluation failed:', err);
+      console.error('runEvaluation failed to start:', err);
       evalBar.reset();
       const patch = { evalStatus: 'error' };
       await patchEntry(pendingEntry.id, patch);
@@ -392,7 +372,58 @@ const PAGE_SIZE = 25;
       renderSummary();
       renderTable();
       showToast('Evaluation failed — please try again');
+      return;
     }
+
+    // Poll for the result — works even if the tab is backgrounded
+    _pollForEvaluation(pendingEntry.id, evalBar);
+  }
+
+  function _pollForEvaluation(id, evalBar) {
+    let stopped = false;
+
+    async function check() {
+      if (stopped) return;
+      try {
+        const res = await fetch(`/api/queue/${id}`);
+        if (!res.ok) throw new Error(`GET /api/queue/${id} ${res.status}`);
+        const item = await res.json();
+
+        if (item.evalStatus === 'evaluated') {
+          stopped = true;
+          document.removeEventListener('visibilitychange', onVisible);
+          const entry = pipelineState.queue.find(e => e.id === id);
+          if (entry) Object.assign(entry, item);
+          evalBar.finish();
+          renderSummary();
+          renderTable();
+          return;
+        }
+
+        if (item.evalStatus === 'error') {
+          stopped = true;
+          document.removeEventListener('visibilitychange', onVisible);
+          const entry = pipelineState.queue.find(e => e.id === id);
+          if (entry) entry.evalStatus = 'error';
+          evalBar.reset();
+          renderSummary();
+          renderTable();
+          showToast('Evaluation failed — please try again');
+          return;
+        }
+      } catch (err) {
+        console.error('Poll /api/queue error:', err);
+      }
+      if (!stopped) setTimeout(check, 3000);
+    }
+
+    // Resume polling immediately when the tab becomes visible again
+    function onVisible() {
+      if (!stopped && document.visibilityState === 'visible') check();
+    }
+    document.addEventListener('visibilitychange', onVisible);
+
+    check();
   }
 
   // ── PIPELINE STATE ────────────────────────────────────────────────────────
