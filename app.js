@@ -950,11 +950,26 @@ const PAGE_SIZE = 25;
             <span class="drawer-total-label">${dTotal}</span>
           </div>
           <div class="drawer-dims">
-            ${CONTENT.sections.map(s => `
+            ${CONTENT.sections.map(s => {
+              const sid = String(s.id);
+              const useBayes = pipelineState.bayesObsCount >= 3 && pipelineState.bayesWeights?.[sid] != null;
+              let dimScore, dimMax;
+              if (useBayes) {
+                const bw  = pipelineState.bayesWeights[sid];
+                const max = s.items.reduce((m, i) => m + i.max, 0);
+                const raw = (entry.scores?.[sid] || []).reduce((a, b) => a + b, 0);
+                dimScore = Math.round((max > 0 ? raw / max : 0) * bw);
+                dimMax   = Math.round(bw);
+              } else {
+                dimScore = entry.weighted[sid];
+                dimMax   = s.weight;
+              }
+              return `
               <div class="drawer-dim">
                 <span class="drawer-dim-label">${dimLabels[s.id]}</span>
-                <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
-              </div>`).join('')}
+                <span class="drawer-dim-score">${dimScore}<span class="drawer-dim-max"> / ${dimMax}</span></span>
+              </div>`;
+            }).join('')}
           </div>`;
         })()}
       </div>
