@@ -898,6 +898,15 @@ const PAGE_SIZE = 25;
     });
   }
 
+  function formatComp(entry) {
+    const { compMin, compMax, compCurrency } = entry;
+    if (!compMin && !compMax) return null;
+    const sym = compCurrency || '£';
+    const fmt = n => sym + Number(n).toLocaleString('en-GB');
+    if (compMin && compMax && compMin !== compMax) return `${fmt(compMin)} – ${fmt(compMax)}`;
+    return fmt(compMin || compMax);
+  }
+
   function formatDate(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
@@ -935,6 +944,7 @@ const PAGE_SIZE = 25;
         <button class="drawer-close" onclick="closeDrawer()">✕</button>
       </div>
 
+      ${formatComp(entry) ? `<div class="drawer-comp">${formatComp(entry)}</div>` : ''}
       ${entry.url ? `<a class="drawer-url" href="${escHtml(entry.url)}" target="_blank" rel="noopener">↗ View posting</a>` : ''}
 
       <div class="drawer-section">

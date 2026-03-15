@@ -763,6 +763,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   color: var(--text);
 }
 
+.drawer-comp { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 6px; }
 .drawer-url { display: inline-block; font-size: 10px; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); margin-bottom: 24px; transition: color 0.15s; }
 .drawer-url:hover { color: var(--accent); }
 

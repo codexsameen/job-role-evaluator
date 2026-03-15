@@ -10,8 +10,12 @@ user: |
 
   ---
 
-  First, extract the company name and role title from the job description.
-  If either cannot be determined, use "Unknown".
+  First, extract the company name, role title, and compensation from the job description.
+  If company or role cannot be determined, use "Unknown".
+  For compensation: extract comp_min and comp_max as integers (annual, in the currency shown).
+  Extract comp_currency as the currency symbol (e.g. "£", "$", "€").
+  If only a single salary figure is given, set both comp_min and comp_max to that value.
+  If no compensation is mentioned, set comp_min, comp_max, and comp_currency to null.
 
   Then score the job description against every item in every section of the rubric below.
   For each item you MUST provide:
@@ -38,6 +42,9 @@ user: |
   {{
     "company": "<extracted company name>",
     "role": "<extracted role title>",
+    "comp_min": <integer or null>,
+    "comp_max": <integer or null>,
+    "comp_currency": "<symbol or null>",
     "scores": {{
       "1": [<one integer per item, in order>]
     }},

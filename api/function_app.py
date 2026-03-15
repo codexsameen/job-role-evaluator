@@ -715,8 +715,11 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
             raw_scores = model_output.get("scores", {})
             reasoning  = model_output.get("reasoning", {})
             knockouts  = model_output.get("knockouts", [])
-            company    = model_output.get("company", "Unknown")
-            role       = model_output.get("role", "Unknown")
+            company      = model_output.get("company", "Unknown")
+            role         = model_output.get("role", "Unknown")
+            comp_min     = model_output.get("comp_min")
+            comp_max     = model_output.get("comp_max")
+            comp_currency = model_output.get("comp_currency")
 
             expected_ids = {str(s["id"]) for s in content["sections"]}
             actual_ids   = set(raw_scores.keys())
@@ -731,15 +734,18 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
                 logging.warning("Total score is 0 for %s — %s. Possible scoring failure.", company, role)
 
             patch = {
-                "company":    company,
-                "role":       role,
-                "url":        url,
-                "total":      total,
-                "weighted":   weighted,
-                "scores":     clamped_scores,
-                "reasoning":  reasoning,
-                "knockouts":  knockouts,
-                "evalStatus": "evaluated",
+                "company":      company,
+                "role":         role,
+                "url":          url,
+                "total":        total,
+                "weighted":     weighted,
+                "scores":       clamped_scores,
+                "reasoning":    reasoning,
+                "knockouts":    knockouts,
+                "compMin":      comp_min,
+                "compMax":      comp_max,
+                "compCurrency": comp_currency,
+                "evalStatus":   "evaluated",
             }
             _patch_queue_item(user_id, queue_id, patch)
             logging.info("Evaluation complete for queue item %s", queue_id)
