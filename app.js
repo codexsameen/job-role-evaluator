@@ -1080,6 +1080,7 @@ const PAGE_SIZE = 25;
       </div>
 
       <div class="drawer-section drawer-actions">
+        ${entry.jdText ? `<button class="drawer-reeval-btn" onclick="reEvaluate('${entry.id}')">Re-evaluate</button>` : ''}
         <button class="qcb-confirm" onclick="removeFromQueue('${entry.id}')">Remove from pipeline</button>
       </div>
     `;
@@ -1189,6 +1190,40 @@ const PAGE_SIZE = 25;
   }
 
   // ── QUEUE MUTATIONS ───────────────────────────────────────────────────────
+
+  async function reEvaluate(id) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry?.jdText) return;
+
+    const patch = { evalStatus: 'pending' };
+    Object.assign(entry, patch);
+    await patchEntry(id, patch);
+    closeDrawer();
+    renderSummary();
+    renderTable();
+
+    const evalBar = _createProgressBar('Re-evaluating role\u2026', 10);
+    try {
+      const res = await fetch('/api/evaluate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ jd_text: entry.jdText, url: entry.url || '', queue_id: id }),
+      });
+      if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
+    } catch (err) {
+      console.error('reEvaluate failed to start:', err);
+      evalBar.reset();
+      const errPatch = { evalStatus: 'error' };
+      Object.assign(entry, errPatch);
+      await patchEntry(id, errPatch);
+      renderSummary();
+      renderTable();
+      showToast('Re-evaluation failed — please try again');
+      return;
+    }
+
+    _pollForEvaluation(id, evalBar);
+  }
 
   async function removeFromQueue(id) {
     // Optimistic update — close drawer and remove from local state immediately
