@@ -619,10 +619,12 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
+    align-items: center;
     overflow: hidden;
     gap: 5px;
     margin-top: 4px;
   }
+  .card-badges .interest-badge { margin-top: 0; }
 
   .card-right {
     display: flex;
