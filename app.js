@@ -750,12 +750,9 @@ const PAGE_SIZE = 25;
   }
 
   function attachSwipeHandlers() {
-    const SWIPE_THRESHOLD = 110;
-    const REVEAL_WIDTH    = 72;
-
     document.querySelectorAll('.pipeline-card').forEach(card => {
-      const content = card.querySelector('.card-content');
-      const id      = card.dataset.id;
+      const content        = card.querySelector('.card-content');
+      const id             = card.dataset.id;
       let startX = 0, startY = 0, currentX = 0;
       let axisLocked = false, isHorizontal = false, didSwipe = false;
 
@@ -780,7 +777,7 @@ const PAGE_SIZE = 25;
         if (!isHorizontal) return;
 
         e.preventDefault();
-        currentX = Math.min(0, Math.max(-REVEAL_WIDTH, dx));
+        currentX = Math.min(0, dx);   // clamp right at 0; left is unlimited
         content.style.transform = `translateX(${currentX}px)`;
         if (Math.abs(currentX) > 5) didSwipe = true;
       }, { passive: false });
@@ -788,10 +785,11 @@ const PAGE_SIZE = 25;
       card.addEventListener('touchend', () => {
         if (!isHorizontal) return;
 
-        if (currentX < -SWIPE_THRESHOLD) {
+        const DELETE_THRESHOLD = card.offsetWidth * 0.6;
+        if (Math.abs(currentX) >= DELETE_THRESHOLD) {
           content.style.transition = 'transform 0.2s ease';
           content.style.transform  = 'translateX(-100%)';
-          setTimeout(() => removeFromQueue(id), 200);
+          setTimeout(() => swipeDelete(id), 180);
         } else {
           content.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
           content.style.transform  = 'translateX(0)';
@@ -806,6 +804,39 @@ const PAGE_SIZE = 25;
           didSwipe = false;
         }
       }, true);
+    });
+  }
+
+  function swipeDelete(id) {
+    const idx     = pipelineState.queue.findIndex(e => e.id === id);
+    const removed = pipelineState.queue[idx];
+    if (!removed) return;
+
+    pipelineState.queue.splice(idx, 1);
+    if (pipelineState.activeId === id) closeDrawer();
+    renderSummary();
+    renderTable();
+
+    let undone = false;
+    const deleteTimer = setTimeout(async () => {
+      if (undone) return;
+      try {
+        const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`DELETE ${res.status}`);
+      } catch {
+        pipelineState.queue.splice(idx, 0, removed);
+        renderSummary();
+        renderTable();
+        showToast('Failed to remove — please try again', true);
+      }
+    }, 10000);
+
+    showUndoToast('Removed from pipeline', () => {
+      undone = true;
+      clearTimeout(deleteTimer);
+      pipelineState.queue.splice(idx, 0, removed);
+      renderSummary();
+      renderTable();
     });
   }
 
@@ -1190,13 +1221,30 @@ const PAGE_SIZE = 25;
   // ── TOAST ─────────────────────────────────────────────────────────────────
 
   let toastTimer;
+
+  function dismissToast() {
+    clearTimeout(toastTimer);
+    document.getElementById('queue-toast').classList.remove('show');
+  }
+
   function showToast(msg, error = false) {
     const el = document.getElementById('queue-toast');
-    el.textContent = msg;
+    el.innerHTML = `<span>${msg}</span>`;
     el.classList.toggle('error', error);
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    toastTimer = setTimeout(dismissToast, 3000);
+  }
+
+  function showUndoToast(msg, onUndo) {
+    const el = document.getElementById('queue-toast');
+    // Store onUndo on the element so the inline onclick can reach it
+    el._undoFn = onUndo;
+    el.innerHTML = `<span>${msg}</span><button class="toast-undo-btn" onclick="document.getElementById('queue-toast')._undoFn(); dismissToast()">Undo</button>`;
+    el.classList.remove('error');
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(dismissToast, 10000);
   }
 
   // ── CLEAR PIPELINE ────────────────────────────────────────────────────────

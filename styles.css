@@ -361,6 +361,9 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   transform: translateX(-50%) translateY(12px);
   background: var(--accent);
   color: #0e0e0e;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   font-family: 'DM Mono', monospace;
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -371,8 +374,23 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   transition: all 0.25s ease;
   z-index: 160;
 }
-.queue-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.queue-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
 .queue-toast.error { background: var(--danger); color: #fff; }
+
+.toast-undo-btn {
+  background: transparent;
+  border: 1px solid rgba(14,14,14,0.4);
+  color: inherit;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.toast-undo-btn:hover { background: rgba(14,14,14,0.2); }
 
 /* ── JD INPUT ────────────────────────────────────────────────────────────── */
 
