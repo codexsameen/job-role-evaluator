@@ -799,8 +799,10 @@ const PAGE_SIZE = 25;
 
   function attachSwipeHandlers() {
     document.querySelectorAll('.pipeline-card').forEach(card => {
-      const content        = card.querySelector('.card-content');
-      const id             = card.dataset.id;
+      const content           = card.querySelector('.card-content');
+      const interestedZone    = card.querySelector('.card-interested-zone');
+      const notInterestedZone = card.querySelector('.card-not-interested-zone');
+      const id                = card.dataset.id;
       let startX = 0, startY = 0, currentX = 0;
       let axisLocked = false, isHorizontal = false, didSwipe = false;
 
@@ -827,6 +829,9 @@ const PAGE_SIZE = 25;
         e.preventDefault();
         currentX = dx;
         content.style.transform = `translateX(${currentX}px)`;
+        // Bring the relevant zone to the front based on direction
+        interestedZone.style.zIndex    = currentX > 0 ? 1 : 0;
+        notInterestedZone.style.zIndex = currentX < 0 ? 1 : 0;
         if (Math.abs(currentX) > 5) didSwipe = true;
       }, { passive: false });
 
