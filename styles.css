@@ -718,7 +718,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 }
 .drawer-inline-company {
   font-family: 'DM Mono', monospace;
-  font-size: 10px;
+  font-size: 16px; /* must be ≥16px to prevent iOS Safari auto-zoom on focus */
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--muted);
