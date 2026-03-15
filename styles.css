@@ -567,13 +567,13 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
   /* ── Swipeable card list (replaces table on mobile) ─────────────────────── */
 
-  .pipeline-cards { display: flex; flex-direction: column; gap: 0; }
+  .pipeline-cards { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
 
   .pipeline-card {
     position: relative;
     overflow: hidden;
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border: 1px solid var(--border);
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
@@ -617,11 +617,12 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   }
   .card-badges {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    gap: 5px;
     margin-top: 4px;
   }
-  .card-badges .interest-badge { margin-top: 0; }
 
   .card-right {
     display: flex;
@@ -698,6 +699,53 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   padding: 0;
 }
 .drawer-close:hover { border-color: var(--danger); color: var(--danger); }
+
+.drawer-company-wrap,
+.drawer-role-wrap { display: flex; align-items: center; gap: 8px; }
+
+.drawer-edit-btn {
+  background: transparent;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+.drawer-company-wrap:hover .drawer-edit-btn,
+.drawer-role-wrap:hover .drawer-edit-btn { opacity: 1; }
+.drawer-edit-btn:hover { color: var(--accent); }
+.drawer-edit-btn svg { width: 12px; height: 12px; }
+@media (hover: none) {
+  .drawer-edit-btn { opacity: 1; }
+}
+
+.drawer-inline-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  outline: none;
+  color: var(--text);
+  width: 100%;
+  padding: 0;
+}
+.drawer-inline-company {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.drawer-inline-role {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.2;
+  color: var(--text);
+}
 
 .drawer-url { display: inline-block; font-size: 10px; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); margin-bottom: 24px; transition: color 0.15s; }
 .drawer-url:hover { color: var(--accent); }

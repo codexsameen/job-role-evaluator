@@ -796,11 +796,19 @@ const PAGE_SIZE = 25;
 
     const dimLabels = CONTENT.sections.reduce((acc, s) => ({ ...acc, [s.id]: s.title }), {});
 
+    const pencilSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
     document.getElementById('drawer-inner').innerHTML = `
       <div class="drawer-header">
         <div class="drawer-header-meta">
-          <div class="drawer-company">${escHtml(entry.company)}</div>
-          <div class="drawer-role">${escHtml(entry.role)}</div>
+          <div class="drawer-company-wrap">
+            <div class="drawer-company">${escHtml(entry.company)}</div>
+            <button class="drawer-edit-btn" data-id="${id}" data-field="company" onclick="startInlineEdit(this)" title="Edit company">${pencilSvg}</button>
+          </div>
+          <div class="drawer-role-wrap">
+            <div class="drawer-role">${escHtml(entry.role)}</div>
+            <button class="drawer-edit-btn" data-id="${id}" data-field="role" onclick="startInlineEdit(this)" title="Edit role">${pencilSvg}</button>
+          </div>
         </div>
         <button class="drawer-close" onclick="closeDrawer()">✕</button>
       </div>
@@ -962,6 +970,51 @@ const PAGE_SIZE = 25;
     renderSummary();
     renderTable();
     await patchEntry(id, { status });
+  }
+
+  function startInlineEdit(btn) {
+    const id      = btn.dataset.id;
+    const field   = btn.dataset.field;
+    const wrap    = btn.parentElement;
+    const textEl  = btn.previousElementSibling;
+    const original = textEl.textContent;
+
+    const input = document.createElement('input');
+    input.className = `drawer-inline-input drawer-inline-${field}`;
+    input.value = original;
+    wrap.replaceChild(input, textEl);
+    btn.style.display = 'none';
+    input.focus();
+    input.select();
+
+    let saved = false;
+
+    function commit() {
+      if (saved) return;
+      saved = true;
+      const value = input.value.trim() || original;
+      saveInlineEdit(id, field, value, input, btn, wrap);
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { saved = true; saveInlineEdit(id, field, original, input, btn, wrap); }
+    });
+  }
+
+  async function saveInlineEdit(id, field, value, input, btn, wrap) {
+    const textEl = document.createElement('div');
+    textEl.className = field === 'company' ? 'drawer-company' : 'drawer-role';
+    textEl.textContent = value;
+    wrap.replaceChild(textEl, input);
+    btn.style.display = '';
+
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry || entry[field] === value) return;
+    entry[field] = value;
+    renderTable();
+    await patchEntry(id, { [field]: value });
   }
 
   async function updateNotes(id, value) {
