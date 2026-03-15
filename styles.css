@@ -567,7 +567,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 
   /* ── Swipeable card list (replaces table on mobile) ─────────────────────── */
 
-  .pipeline-cards { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; }
+  .pipeline-cards { display: flex; flex-direction: column; gap: 10px; padding: 12px 0; }
 
   .pipeline-card {
     position: relative;
