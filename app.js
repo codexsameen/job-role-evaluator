@@ -605,6 +605,17 @@ const PAGE_SIZE = 25;
 
   // ── TABLE RENDER ──────────────────────────────────────────────────────────
 
+  function _bayesInsightText() {
+    const { bayesWeights, bayesObsCount } = pipelineState;
+    if (bayesObsCount < 3 || !bayesWeights || !CONTENT) return '';
+    const sorted = CONTENT.sections
+      .slice()
+      .sort((a, b) => (bayesWeights[String(b.id)] || 0) - (bayesWeights[String(a.id)] || 0));
+    const top = sorted.slice(0, 2).map(s => `<strong>${escHtml(s.title || String(s.id))}</strong>`);
+    const names = top.length === 2 ? `${top[0]} and ${top[1]}` : top[0];
+    return `You tend to pursue roles that score well on ${names}.`;
+  }
+
   function renderSummary() {
     const { queue, filters } = pipelineState;
     const container = document.getElementById('summary-bar');
@@ -626,6 +637,7 @@ const PAGE_SIZE = 25;
     });
 
     const activeStatus = filters.status;
+    const insightText = _bayesInsightText();
 
     container.innerHTML = `
       <div class="summary-stats">
@@ -633,6 +645,7 @@ const PAGE_SIZE = 25;
         <span class="summary-divider">·</span>
         <span class="summary-stat">avg <span class="summary-stat-val">${avgScore}</span></span>
       </div>
+      ${insightText ? `<div class="summary-insight">${insightText}</div>` : ''}
       <div class="summary-status-chips">
         ${Object.entries(STATUS_LABELS)
           .filter(([val]) => statusCounts[val])

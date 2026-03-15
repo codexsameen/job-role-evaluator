@@ -867,6 +867,8 @@ body.light .drawer-backdrop { background: rgba(245,240,232,0.7); }
 }
 
 .summary-stats { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.summary-insight { font-size: 12px; color: var(--muted); line-height: 1.4; padding: 2px 0; }
+.summary-insight strong { color: var(--text); font-weight: 500; }
 .summary-stat { font-size: 11px; color: var(--muted); }
 .summary-stat-val { color: var(--text); font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; }
 .summary-divider { color: var(--border); }
