@@ -698,7 +698,6 @@ const PAGE_SIZE = 25;
                 </div>
               </div>
               <div class="card-right">
-                ${e.evalStatus !== 'pending' ? `<span class="card-score">${e.total}</span>` : ''}
                 ${e.evalStatus !== 'pending' ? verdictBadge(e.total) : ''}
               </div>
             </div>
