@@ -176,6 +176,72 @@ def _profile_to_candidate_string(profile):
 # Scoring — all arithmetic done in Python, never by the model
 # ---------------------------------------------------------------------------
 
+_POSITIVE_STATUSES = {"applied", "phone-screen", "interview", "offer"}
+
+def compute_bayes_weights(entries, rubric, prior_strength=15):
+    """
+    Dirichlet-style empirical Bayes update.
+    Returns (bayes_weights_dict, observation_count).
+
+    Prior: α_k = prior_strength * (rubric_weight_k / 100)
+    Each positive entry adds its normalised section ratios to pos_sums;
+    each negative entry adds 0.5× to neg_sums (asymmetric — negatives are
+    weaker evidence since many are just exploratory dismissals).
+    Posterior weight_k ∝ α_k + pos_k − 0.5·neg_k, floored at 0.1 to keep
+    all sections active, then renormalised to sum=100.
+    """
+    sections   = rubric.get("sections", [])
+    section_ids = [str(s["id"]) for s in sections]
+    prior_alpha = {str(s["id"]): prior_strength * (s["weight"] / 100.0) for s in sections}
+
+    pos_sums = {sid: 0.0 for sid in section_ids}
+    neg_sums = {sid: 0.0 for sid in section_ids}
+    n_pos = n_neg = 0
+
+    for entry in entries:
+        if entry.get("evalStatus") != "evaluated":
+            continue
+        scores   = entry.get("scores", {})
+        interest = entry.get("interest", "")
+        status   = entry.get("status", "")
+
+        is_pos = interest == "interested" or status in _POSITIVE_STATUSES
+        is_neg = interest == "not-interested" or status == "rejected"
+        if not is_pos and not is_neg:
+            continue
+
+        ratios = {}
+        for s in sections:
+            sid       = str(s["id"])
+            max_pts   = sum(item["max"] for item in s["items"])
+            raw       = scores.get(sid, [])
+            ratios[sid] = (sum(raw) / max_pts) if max_pts > 0 else 0.0
+
+        if is_pos:
+            n_pos += 1
+            for sid in section_ids:
+                pos_sums[sid] += ratios[sid]
+        else:
+            n_neg += 1
+            for sid in section_ids:
+                neg_sums[sid] += ratios[sid]
+
+    posterior = {
+        sid: max(prior_alpha[sid] + pos_sums[sid] - 0.5 * neg_sums[sid], 0.1)
+        for sid in section_ids
+    }
+    total_p = sum(posterior.values())
+    weights = {sid: round((v / total_p) * 100, 1) for sid, v in posterior.items()}
+
+    # Fix floating-point rounding so weights sum to exactly 100
+    diff = round(100.0 - sum(weights.values()), 1)
+    if diff:
+        largest = max(weights, key=lambda k: weights[k])
+        weights[largest] = round(weights[largest] + diff, 1)
+
+    return weights, n_pos + n_neg
+
+
 def compute_scores(content, raw_scores):
     weighted = {}
     clamped_scores = {}
@@ -660,3 +726,44 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
         status_code=200,
         mimetype="application/json",
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /api/profile/bayes-update
+# ---------------------------------------------------------------------------
+@app.route(route="profile/bayes-update", methods=["POST"])
+def bayes_update(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+
+    try:
+        profiles = get_profiles_container()
+        try:
+            profile = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception:
+            return func.HttpResponse("Profile not found", status_code=404)
+
+        rubric = profile.get("rubric")
+        if not rubric:
+            return func.HttpResponse("No rubric found", status_code=400)
+
+        prior_strength = profile.get("bayesPriorStrength", 15)
+
+        container = get_container()
+        query  = "SELECT * FROM c WHERE c.userId = @userId AND c.evalStatus = 'evaluated'"
+        params = [{"name": "@userId", "value": user_id}]
+        entries = list(container.query_items(query=query, parameters=params))
+
+        bayes_weights, obs_count = compute_bayes_weights(entries, rubric, prior_strength)
+
+        profile["bayesWeights"]         = bayes_weights
+        profile["bayesObservationCount"] = obs_count
+        profiles.upsert_item(profile)
+
+        return func.HttpResponse(
+            json.dumps({"bayesWeights": bayes_weights, "bayesObservationCount": obs_count}),
+            status_code=200,
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.exception("POST /api/profile/bayes-update failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)

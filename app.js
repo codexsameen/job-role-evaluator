@@ -35,6 +35,8 @@ const PAGE_SIZE = 25;
       }
 
       CONTENT = profile?.rubric || null;
+      pipelineState.bayesWeights  = profile?.bayesWeights  || null;
+      pipelineState.bayesObsCount = profile?.bayesObservationCount || 0;
       document.getElementById('view-rubric-btn').hidden = !CONTENT;
 
       queue = queueData || [];
@@ -429,10 +431,12 @@ const PAGE_SIZE = 25;
   }
 
   let pipelineState = {
-    queue:     [],
-    page:      0,
-    sortKey:   'added-desc',
-    activeId:  null,
+    queue:              [],
+    page:               0,
+    sortKey:            'added-desc',
+    activeId:           null,
+    bayesWeights:       null,
+    bayesObsCount:      0,
     filters: {
       interest: new Set(),
       verdict:  new Set(),
@@ -534,6 +538,29 @@ const PAGE_SIZE = 25;
     const cls   = getVerdictClass(total);
     const label = getVerdictLabel(total);
     return `<span class="verdict-badge ${cls}">${label}</span>`;
+  }
+
+  function personalisedTotal(entry) {
+    const w = pipelineState.bayesWeights;
+    if (!w || !entry.scores || !CONTENT) return null;
+    const score = CONTENT.sections.reduce((sum, s) => {
+      const sid = String(s.id);
+      const max = s.items.reduce((m, i) => m + i.max, 0);
+      const raw = (entry.scores[sid] || []).reduce((a, b) => a + b, 0);
+      return sum + (max > 0 ? (raw / max) * (w[sid] || 0) : 0);
+    }, 0);
+    return Math.round(score);
+  }
+
+  async function triggerBayesUpdate() {
+    try {
+      const res = await fetch('/api/profile/bayes-update', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        pipelineState.bayesWeights  = data.bayesWeights;
+        pipelineState.bayesObsCount = data.bayesObservationCount;
+      }
+    } catch (_) { /* fire-and-forget — silently ignore */ }
   }
 
   // ── TABLE RENDER ──────────────────────────────────────────────────────────
@@ -841,11 +868,27 @@ const PAGE_SIZE = 25;
 
       <div class="drawer-section">
         <div class="drawer-section-label">Verdict</div>
-        ${entry.evalStatus === 'pending' ? `<span class="drawer-verdict-pending">—</span>` : `
+        ${entry.evalStatus === 'pending' ? `<span class="drawer-verdict-pending">—</span>` : (() => {
+          const pTotal = personalisedTotal(entry);
+          const showPersonal = pTotal !== null && pipelineState.bayesObsCount >= 3 && pTotal !== entry.total;
+          return `
           ${verdictBadge(entry.total)}
-          <div class="drawer-total-track">
-            <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
-            <span class="drawer-total-label">${entry.total}</span>
+          <div class="drawer-score-rows">
+            <div class="drawer-score-row">
+              <span class="drawer-score-row-label">Rubric</span>
+              <div class="drawer-total-track">
+                <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
+                <span class="drawer-total-label">${entry.total}</span>
+              </div>
+            </div>
+            ${showPersonal ? `
+            <div class="drawer-score-row">
+              <span class="drawer-score-row-label">Personal</span>
+              <div class="drawer-total-track">
+                <div class="drawer-total-fill" style="width: ${pTotal}%; background: ${barColor(pTotal)}"></div>
+                <span class="drawer-total-label">${pTotal}</span>
+              </div>
+            </div>` : ''}
           </div>
           <div class="drawer-dims">
             ${CONTENT.sections.map(s => `
@@ -853,8 +896,8 @@ const PAGE_SIZE = 25;
                 <span class="drawer-dim-label">${dimLabels[s.id]}</span>
                 <span class="drawer-dim-score">${entry.weighted[s.id]}<span class="drawer-dim-max"> / ${s.weight}</span></span>
               </div>`).join('')}
-          </div>
-        `}
+          </div>`;
+        })()}
       </div>
 
       ${entry.evalStatus === 'evaluated' && entry.knockouts?.length ? `
@@ -956,6 +999,7 @@ const PAGE_SIZE = 25;
     renderSummary();
     renderTable();
     await patchEntry(id, { interest: level });
+    triggerBayesUpdate();
   }
 
   async function updateStatus(id, status, btn) {
@@ -967,6 +1011,7 @@ const PAGE_SIZE = 25;
     renderSummary();
     renderTable();
     await patchEntry(id, { status });
+    triggerBayesUpdate();
   }
 
   function startInlineEdit(btn) {
