@@ -585,17 +585,18 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 12px 10px;
+    padding: 14px 10px;
     background: var(--bg);
     will-change: transform;
   }
   .pipeline-card.active .card-content { background: var(--surface2); }
 
-  .card-text {
+  .card-left {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
     min-width: 0;
+    flex: 1;
   }
   .card-company {
     font-size: 10px;
@@ -613,8 +614,28 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 2px;
+  }
 
-  .card-verdict { flex-shrink: 0; }
+  .card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .card-score {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    font-family: 'DM Mono', monospace;
+  }
 
   .card-delete-zone {
     position: absolute;

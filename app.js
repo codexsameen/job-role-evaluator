@@ -689,11 +689,18 @@ const PAGE_SIZE = 25;
         ${pageItems.map(e => `
           <div class="pipeline-card${activeId === e.id ? ' active' : ''}" data-id="${e.id}" onclick="openDrawer('${e.id}')">
             <div class="card-content">
-              <div class="card-text">
+              <div class="card-left">
                 <span class="card-company">${escHtml(e.company)}</span>
                 <span class="card-role">${escHtml(e.role)}</span>
+                <div class="card-badges">
+                  ${interestBadge(e.interest)}
+                  ${statusBadge(e.status)}
+                </div>
               </div>
-              <div class="card-verdict">${e.evalStatus === 'pending' ? '' : verdictBadge(e.total)}</div>
+              <div class="card-right">
+                ${e.evalStatus !== 'pending' ? `<span class="card-score">${e.total}</span>` : ''}
+                ${e.evalStatus !== 'pending' ? verdictBadge(e.total) : ''}
+              </div>
             </div>
             <div class="card-delete-zone">${trashIcon}</div>
           </div>
@@ -710,7 +717,7 @@ const PAGE_SIZE = 25;
   }
 
   function attachSwipeHandlers() {
-    const SWIPE_THRESHOLD = 60;
+    const SWIPE_THRESHOLD = 110;
     const REVEAL_WIDTH    = 72;
 
     document.querySelectorAll('.pipeline-card').forEach(card => {
@@ -733,7 +740,7 @@ const PAGE_SIZE = 25;
         const dx = e.touches[0].clientX - startX;
         const dy = e.touches[0].clientY - startY;
 
-        if (!axisLocked) {
+        if (!axisLocked && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
           axisLocked   = true;
           isHorizontal = Math.abs(dx) > Math.abs(dy);
         }
