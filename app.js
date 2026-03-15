@@ -463,14 +463,14 @@ const PAGE_SIZE = 25;
 
     const filtered = queue.filter(e => {
       if (interest.size && !interest.has(e.interest || 'not-interested')) return false;
-      if (verdict.size  && !verdict.has(getVerdictKey(e.total)))          return false;
+      if (verdict.size  && !verdict.has(getVerdictKey(displayTotal(e))))   return false;
       if (status.size   && !status.has(e.status   || 'bookmarked'))       return false;
       return true;
     });
 
     return filtered.sort((a, b) => {
-      if (sortKey === 'score-desc') return b.total - a.total;
-      if (sortKey === 'score-asc')  return a.total - b.total;
+      if (sortKey === 'score-desc') return displayTotal(b) - displayTotal(a);
+      if (sortKey === 'score-asc')  return displayTotal(a) - displayTotal(b);
       if (sortKey === 'added-desc') return new Date(b.addedAt) - new Date(a.addedAt);
       if (sortKey === 'added-asc')  return new Date(a.addedAt) - new Date(b.addedAt);
       return 0;
@@ -552,6 +552,15 @@ const PAGE_SIZE = 25;
     return Math.round(score);
   }
 
+  // Returns personalised score when >=3 labelled roles exist, otherwise rubric score
+  function displayTotal(entry) {
+    if (pipelineState.bayesObsCount >= 3) {
+      const p = personalisedTotal(entry);
+      if (p !== null) return p;
+    }
+    return entry.total;
+  }
+
   async function triggerBayesUpdate() {
     try {
       const res = await fetch('/api/profile/bayes-update', { method: 'POST' });
@@ -573,7 +582,7 @@ const PAGE_SIZE = 25;
     if (queue.length === 0) { container.innerHTML = ''; return; }
 
     const avgScore = queue.length
-      ? Math.round(queue.reduce((s, e) => s + e.total, 0) / queue.length)
+      ? Math.round(queue.reduce((s, e) => s + displayTotal(e), 0) / queue.length)
       : 0;
 
     const statusCounts = {};
@@ -688,7 +697,7 @@ const PAGE_SIZE = 25;
             <tr class="pipeline-row${activeId === e.id ? ' active' : ''}" onclick="openDrawer('${e.id}')">
               <td class="col-company">${escHtml(e.company)}</td>
               <td class="col-role">${escHtml(e.role)}</td>
-              <td class="col-verdict">${e.evalStatus === 'pending' ? '' : verdictBadge(e.total)}</td>
+              <td class="col-verdict">${e.evalStatus === 'pending' ? '' : verdictBadge(displayTotal(e))}</td>
               <td class="col-interest">${e.interest ? interestBadge(e.interest) : '—'}</td>
               <td class="col-status">${statusBadge(e.status)}</td>
               <td class="col-added">${formatDate(e.addedAt)}</td>
@@ -718,7 +727,7 @@ const PAGE_SIZE = 25;
             <div class="card-content">
               <div class="card-top">
                 <span class="card-company">${escHtml(e.company)}</span>
-                ${e.evalStatus !== 'pending' ? verdictBadge(e.total) : ''}
+                ${e.evalStatus !== 'pending' ? verdictBadge(displayTotal(e)) : ''}
               </div>
               <div class="card-role">${escHtml(e.role)}</div>
               <div class="card-badges">
@@ -869,26 +878,12 @@ const PAGE_SIZE = 25;
       <div class="drawer-section">
         <div class="drawer-section-label">Verdict</div>
         ${entry.evalStatus === 'pending' ? `<span class="drawer-verdict-pending">—</span>` : (() => {
-          const pTotal = personalisedTotal(entry);
-          const showPersonal = pTotal !== null && pipelineState.bayesObsCount >= 3 && pTotal !== entry.total;
+          const dTotal = displayTotal(entry);
           return `
-          ${verdictBadge(entry.total)}
-          <div class="drawer-score-rows">
-            <div class="drawer-score-row">
-              <span class="drawer-score-row-label">Rubric</span>
-              <div class="drawer-total-track">
-                <div class="drawer-total-fill" style="width: ${entry.total}%; background: ${barColor(entry.total)}"></div>
-                <span class="drawer-total-label">${entry.total}</span>
-              </div>
-            </div>
-            ${showPersonal ? `
-            <div class="drawer-score-row">
-              <span class="drawer-score-row-label">Personal</span>
-              <div class="drawer-total-track">
-                <div class="drawer-total-fill" style="width: ${pTotal}%; background: ${barColor(pTotal)}"></div>
-                <span class="drawer-total-label">${pTotal}</span>
-              </div>
-            </div>` : ''}
+          ${verdictBadge(dTotal)}
+          <div class="drawer-total-track">
+            <div class="drawer-total-fill" style="width: ${dTotal}%; background: ${barColor(dTotal)}"></div>
+            <span class="drawer-total-label">${dTotal}</span>
           </div>
           <div class="drawer-dims">
             ${CONTENT.sections.map(s => `
