@@ -574,7 +574,6 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
     overflow: hidden;
     background: var(--surface);
     border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
     cursor: pointer;
     user-select: none;
     -webkit-user-select: none;
