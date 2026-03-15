@@ -1080,8 +1080,8 @@ const PAGE_SIZE = 25;
       </div>
 
       <div class="drawer-section drawer-actions">
-        ${entry.jdText ? `<button class="drawer-reeval-btn" onclick="reEvaluate('${entry.id}')">Re-evaluate</button>` : ''}
         <button class="qcb-confirm" onclick="removeFromQueue('${entry.id}')">Remove from pipeline</button>
+        ${entry.jdText ? `<button class="drawer-reeval-btn" onclick="reEvaluate('${entry.id}')">Re-evaluate</button>` : ''}
       </div>
     `;
 
