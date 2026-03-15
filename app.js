@@ -689,16 +689,14 @@ const PAGE_SIZE = 25;
         ${pageItems.map(e => `
           <div class="pipeline-card${activeId === e.id ? ' active' : ''}" data-id="${e.id}" onclick="openDrawer('${e.id}')">
             <div class="card-content">
-              <div class="card-left">
+              <div class="card-top">
                 <span class="card-company">${escHtml(e.company)}</span>
-                <span class="card-role">${escHtml(e.role)}</span>
-                <div class="card-badges">
-                  ${interestBadge(e.interest)}
-                  ${statusBadge(e.status)}
-                </div>
-              </div>
-              <div class="card-right">
                 ${e.evalStatus !== 'pending' ? verdictBadge(e.total) : ''}
+              </div>
+              <div class="card-role">${escHtml(e.role)}</div>
+              <div class="card-badges">
+                ${interestBadge(e.interest)}
+                ${statusBadge(e.status)}
               </div>
             </div>
             <div class="card-delete-zone">${trashIcon}</div>
