@@ -644,17 +644,29 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
   }
   .card-badges .interest-badge { margin-top: 0; }
 
-  .card-delete-zone {
+  .card-not-interested-zone,
+  .card-interested-zone {
     position: absolute;
-    left: 0; right: 0; top: 0; bottom: 0;
-    background: var(--danger);
+    top: 0; bottom: 0;
+    width: 100%;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    padding-right: 20px;
     z-index: 0;
   }
-  .card-delete-zone svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .card-not-interested-zone {
+    right: 0;
+    background: var(--danger);
+    justify-content: flex-end;
+    padding-right: 20px;
+  }
+  .card-interested-zone {
+    left: 0;
+    background: #2a7a4b;
+    justify-content: flex-start;
+    padding-left: 20px;
+  }
+  .card-not-interested-zone svg,
+  .card-interested-zone svg { width: 22px; height: 22px; flex-shrink: 0; }
 
 }
 

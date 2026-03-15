@@ -760,16 +760,18 @@ const PAGE_SIZE = 25;
   }
 
   function renderCards(pageItems, activeId, container, totalPages, page) {
-    const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path>
-      <path d="M10 11v6M14 11v6"></path>
-      <path d="M9 6V4h6v2"></path>
+    const xIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>`;
+    const tickIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
     </svg>`;
     container.innerHTML = `
       <div class="pipeline-cards">
         ${pageItems.map(e => `
           <div class="pipeline-card${activeId === e.id ? ' active' : ''}" data-id="${e.id}" onclick="openDrawer('${e.id}')">
+            <div class="card-interested-zone">${tickIcon}</div>
             <div class="card-content">
               <div class="card-top">
                 <span class="card-company">${escHtml(e.company)}</span>
@@ -781,7 +783,7 @@ const PAGE_SIZE = 25;
                 ${statusBadge(e.status)}
               </div>
             </div>
-            <div class="card-delete-zone">${trashIcon}</div>
+            <div class="card-not-interested-zone">${xIcon}</div>
           </div>
         `).join('')}
       </div>
@@ -823,7 +825,7 @@ const PAGE_SIZE = 25;
         if (!isHorizontal) return;
 
         e.preventDefault();
-        currentX = Math.min(0, dx);   // clamp right at 0; left is unlimited
+        currentX = dx;
         content.style.transform = `translateX(${currentX}px)`;
         if (Math.abs(currentX) > 5) didSwipe = true;
       }, { passive: false });
@@ -831,11 +833,15 @@ const PAGE_SIZE = 25;
       card.addEventListener('touchend', () => {
         if (!isHorizontal) return;
 
-        const DELETE_THRESHOLD = card.offsetWidth * 0.6;
-        if (Math.abs(currentX) >= DELETE_THRESHOLD) {
+        const THRESHOLD = card.offsetWidth * 0.6;
+        if (currentX <= -THRESHOLD) {
           content.style.transition = 'transform 0.2s ease';
           content.style.transform  = 'translateX(-100%)';
-          setTimeout(() => swipeDelete(id), 180);
+          setTimeout(() => swipeNotInterested(id), 180);
+        } else if (currentX >= THRESHOLD) {
+          content.style.transition = 'transform 0.2s ease';
+          content.style.transform  = 'translateX(100%)';
+          setTimeout(() => swipeInterested(id), 180);
         } else {
           content.style.transition = 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
           content.style.transform  = 'translateX(0)';
@@ -853,36 +859,37 @@ const PAGE_SIZE = 25;
     });
   }
 
-  function swipeDelete(id) {
-    const idx     = pipelineState.queue.findIndex(e => e.id === id);
-    const removed = pipelineState.queue[idx];
-    if (!removed) return;
-
-    pipelineState.queue.splice(idx, 1);
-    if (pipelineState.activeId === id) closeDrawer();
+  function swipeNotInterested(id) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry) return;
+    const prev = entry.interest;
+    entry.interest = 'not-interested';
     renderSummary();
     renderTable();
-
-    let undone = false;
-    const deleteTimer = setTimeout(async () => {
-      if (undone) return;
-      try {
-        const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error(`DELETE ${res.status}`);
-      } catch {
-        pipelineState.queue.splice(idx, 0, removed);
-        renderSummary();
-        renderTable();
-        showToast('Failed to remove — please try again', true);
-      }
-    }, 10000);
-
-    showUndoToast('Removed from pipeline', () => {
-      undone = true;
-      clearTimeout(deleteTimer);
-      pipelineState.queue.splice(idx, 0, removed);
+    patchEntry(id, { interest: 'not-interested' });
+    triggerBayesUpdate();
+    showUndoToast('Marked as Not Interested', () => {
+      entry.interest = prev;
       renderSummary();
       renderTable();
+      patchEntry(id, { interest: prev });
+    });
+  }
+
+  function swipeInterested(id) {
+    const entry = pipelineState.queue.find(e => e.id === id);
+    if (!entry) return;
+    const prev = entry.interest;
+    entry.interest = 'interested';
+    renderSummary();
+    renderTable();
+    patchEntry(id, { interest: 'interested' });
+    triggerBayesUpdate();
+    showUndoToast('Marked as Interested', () => {
+      entry.interest = prev;
+      renderSummary();
+      renderTable();
+      patchEntry(id, { interest: prev });
     });
   }
 
