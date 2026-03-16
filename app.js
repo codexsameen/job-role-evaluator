@@ -921,6 +921,25 @@ const PAGE_SIZE = 25;
     return `hsl(${Math.round(pct * 1.45)}, 52%, 46%)`;
   }
 
+  function renderTimelineHTML(entry) {
+    const history = entry.statusHistory && entry.statusHistory.length
+      ? [...entry.statusHistory].reverse()
+      : [{ status: entry.status || 'bookmarked', timestamp: entry.createdAt }];
+    return history.map((h, i) => {
+      const d = new Date(h.timestamp);
+      const label = STATUS_LABELS[h.status] || h.status;
+      const time = d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="timeline-entry${i === 0 ? ' timeline-entry--latest' : ''}">
+          <div class="timeline-dot timeline-dot--${h.status}"></div>
+          <div class="timeline-content">
+            <span class="timeline-status">${label}</span>
+            <span class="timeline-time">${time}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
   function openDrawer(id) {
     const entry = pipelineState.queue.find(e => e.id === id);
     if (!entry) return;
@@ -972,25 +991,8 @@ const PAGE_SIZE = 25;
 
       <div class="drawer-section">
         <div class="drawer-section-label">Timeline</div>
-        <div class="timeline">
-          ${(() => {
-            const history = entry.statusHistory && entry.statusHistory.length
-              ? [...entry.statusHistory].reverse()
-              : [{ status: entry.status || 'bookmarked', timestamp: entry.createdAt }];
-            return history.map((h, i) => {
-              const d = new Date(h.timestamp);
-              const label = STATUS_LABELS[h.status] || h.status;
-              const time = d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-              return `
-                <div class="timeline-entry${i === 0 ? ' timeline-entry--latest' : ''}">
-                  <div class="timeline-dot timeline-dot--${h.status}"></div>
-                  <div class="timeline-content">
-                    <span class="timeline-status">${label}</span>
-                    <span class="timeline-time">${time}</span>
-                  </div>
-                </div>`;
-            }).join('');
-          })()}
+        <div class="timeline" id="drawer-timeline">
+          ${renderTimelineHTML(entry)}
         </div>
       </div>
 
@@ -1152,6 +1154,8 @@ const PAGE_SIZE = 25;
     btn.classList.add('active');
     renderSummary();
     renderTable();
+    const timelineEl = document.getElementById('drawer-timeline');
+    if (timelineEl) timelineEl.innerHTML = renderTimelineHTML(entry);
     await patchEntry(id, { status, statusHistory: history });
     triggerBayesUpdate();
   }
