@@ -1143,7 +1143,9 @@ const PAGE_SIZE = 25;
   async function updateStatus(id, status, btn) {
     const entry = pipelineState.queue.find(e => e.id === id);
     if (!entry) return;
-    const existing = entry.statusHistory || [];
+    const existing = entry.statusHistory && entry.statusHistory.length
+      ? entry.statusHistory
+      : [{ status: 'bookmarked', timestamp: entry.createdAt }];
     const lastIdx = existing.map(h => h.status).lastIndexOf(status);
     const history = lastIdx !== -1
       ? existing.slice(0, lastIdx + 1)
