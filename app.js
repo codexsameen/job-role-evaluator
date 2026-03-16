@@ -355,7 +355,8 @@ const PAGE_SIZE = 25;
     document.getElementById('jd-url').value  = '';
     setFetchBtnState('idle');
 
-    const evalBar = _createProgressBar('Evaluating role\u2026', 10);
+    const _evalStart = Date.now();
+    const evalBar = _createProgressBar('Evaluating role\u2026', _getEstimate('timing:eval', 10));
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
@@ -377,10 +378,10 @@ const PAGE_SIZE = 25;
     }
 
     // Poll for the result — works even if the tab is backgrounded
-    _pollForEvaluation(pendingEntry.id, evalBar);
+    _pollForEvaluation(pendingEntry.id, evalBar, _evalStart);
   }
 
-  function _pollForEvaluation(id, evalBar) {
+  function _pollForEvaluation(id, evalBar, startTime) {
     let stopped = false;
 
     async function check() {
@@ -393,6 +394,7 @@ const PAGE_SIZE = 25;
         if (item.evalStatus === 'evaluated') {
           stopped = true;
           document.removeEventListener('visibilitychange', onVisible);
+          if (startTime) _recordTiming('timing:eval', (Date.now() - startTime) / 1000);
           const entry = pipelineState.queue.find(e => e.id === id);
           if (entry) Object.assign(entry, item);
           evalBar.finish();
@@ -1027,10 +1029,16 @@ const PAGE_SIZE = 25;
                 dimScore = entry.weighted[sid];
                 dimMax   = s.weight;
               }
+              const pct = dimMax > 0 ? Math.round((dimScore / dimMax) * 100) : 0;
               return `
               <div class="drawer-dim">
-                <span class="drawer-dim-label">${dimLabels[s.id]}</span>
-                <span class="drawer-dim-score">${dimScore}<span class="drawer-dim-max"> / ${dimMax}</span></span>
+                <div class="drawer-dim-header">
+                  <span class="drawer-dim-label">${dimLabels[s.id]}</span>
+                  <span class="drawer-dim-score">${dimScore}<span class="drawer-dim-max"> / ${dimMax}</span></span>
+                </div>
+                <div class="drawer-dim-track">
+                  <div class="drawer-dim-fill" style="width: ${pct}%; background: ${barColor(pct)}"></div>
+                </div>
               </div>`;
             }).join('')}
           </div>`;
@@ -1240,7 +1248,8 @@ const PAGE_SIZE = 25;
     renderSummary();
     renderTable();
 
-    const evalBar = _createProgressBar('Re-evaluating role\u2026', 10);
+    const _reEvalStart = Date.now();
+    const evalBar = _createProgressBar('Re-evaluating role\u2026', _getEstimate('timing:eval', 10));
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
@@ -1260,7 +1269,7 @@ const PAGE_SIZE = 25;
       return;
     }
 
-    _pollForEvaluation(id, evalBar);
+    _pollForEvaluation(id, evalBar, _reEvalStart);
   }
 
   async function removeFromQueue(id) {
@@ -1287,6 +1296,24 @@ const PAGE_SIZE = 25;
 
   // ── PROGRESS BARS ─────────────────────────────────────────────────────────
 
+  const _TIMING_HISTORY = 5; // rolling window size
+
+  function _getEstimate(key, fallback) {
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      if (!stored.length) return fallback;
+      return Math.round(stored.reduce((a, b) => a + b, 0) / stored.length);
+    } catch { return fallback; }
+  }
+
+  function _recordTiming(key, elapsedSeconds) {
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      stored.push(Math.round(elapsedSeconds));
+      localStorage.setItem(key, JSON.stringify(stored.slice(-_TIMING_HISTORY)));
+    } catch {}
+  }
+
   function _createProgressBar(label, estimatedSeconds) {
     const item = document.createElement('div');
     item.className = 'progress-item';
@@ -1311,10 +1338,17 @@ const PAGE_SIZE = 25;
   }
 
   let _rubricBar = null;
+  let _rubricStart = null;
 
-  function startRubricProgress() { _rubricBar = _createProgressBar('Generating rubric\u2026', 55); }
-  function finishRubricProgress() { _rubricBar?.finish(); _rubricBar = null; }
-  function resetRubricProgress()  { _rubricBar?.reset();  _rubricBar = null; }
+  function startRubricProgress() {
+    _rubricStart = Date.now();
+    _rubricBar = _createProgressBar('Generating rubric\u2026', _getEstimate('timing:rubric', 55));
+  }
+  function finishRubricProgress() {
+    if (_rubricStart) _recordTiming('timing:rubric', (Date.now() - _rubricStart) / 1000);
+    _rubricBar?.finish(); _rubricBar = null; _rubricStart = null;
+  }
+  function resetRubricProgress()  { _rubricBar?.reset();  _rubricBar = null; _rubricStart = null; }
 
   // ── RUBRIC EDITOR ─────────────────────────────────────────────────────────
 
