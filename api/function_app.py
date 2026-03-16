@@ -746,6 +746,7 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
                 "compMax":      comp_max,
                 "compCurrency": comp_currency,
                 "evalStatus":   "evaluated",
+                "evaluatedAt":  datetime.now(timezone.utc).isoformat(),
             }
             _patch_queue_item(user_id, queue_id, patch)
             logging.info("Evaluation complete for queue item %s", queue_id)

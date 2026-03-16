@@ -800,6 +800,7 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-option-btn.active { background: var(--surface); }
 
 .drawer-verdict-pending { color: var(--muted); font-size: 18px; }
+.drawer-evaluated-at { font-size: 10px; color: var(--muted); margin-top: 6px; }
 
 .drawer-section .verdict-badge { font-size: 10px; padding: 5px 12px; letter-spacing: 0.08em; }
 

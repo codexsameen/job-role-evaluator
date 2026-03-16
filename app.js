@@ -972,6 +972,7 @@ const PAGE_SIZE = 25;
       <div class="drawer-section">
         <div class="drawer-section-label">Evaluation</div>
         ${evalStatusBadge(entry.evalStatus)}
+        ${entry.evaluatedAt ? `<div class="drawer-evaluated-at">Last evaluated ${new Date(entry.evaluatedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</div>` : ''}
       </div>
 
       <div class="drawer-section">
