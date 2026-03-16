@@ -37,6 +37,8 @@ const PAGE_SIZE = 25;
       CONTENT = profile?.rubric || null;
       pipelineState.bayesWeights  = profile?.bayesWeights  || null;
       pipelineState.bayesObsCount = profile?.bayesObservationCount || 0;
+      pipelineState.evalTimings   = profile?.evalTimings   || [];
+      pipelineState.rubricTimings = profile?.rubricTimings || [];
       document.getElementById('view-rubric-btn').hidden = !CONTENT;
 
       queue = queueData || [];
@@ -357,7 +359,7 @@ const PAGE_SIZE = 25;
     setFetchBtnState('idle');
 
     const _evalStart = Date.now();
-    const evalBar = _createProgressBar('Evaluating role\u2026', _getEstimate('timing:eval', 10));
+    const evalBar = _createProgressBar('Evaluating role\u2026', _getEstimate('evalTimings', 10));
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
@@ -395,7 +397,7 @@ const PAGE_SIZE = 25;
         if (item.evalStatus === 'evaluated') {
           stopped = true;
           document.removeEventListener('visibilitychange', onVisible);
-          if (startTime) _recordTiming('timing:eval', (Date.now() - startTime) / 1000);
+          if (startTime) _recordTiming('evalTimings', (Date.now() - startTime) / 1000);
           const entry = pipelineState.queue.find(e => e.id === id);
           if (entry) Object.assign(entry, item);
           evalBar.finish();
@@ -1277,7 +1279,7 @@ const PAGE_SIZE = 25;
     renderTable();
 
     const _reEvalStart = Date.now();
-    const evalBar = _createProgressBar('Re-evaluating role\u2026', _getEstimate('timing:eval', 10));
+    const evalBar = _createProgressBar('Re-evaluating role\u2026', _getEstimate('evalTimings', 10));
     try {
       const res = await fetch('/api/evaluate', {
         method:  'POST',
@@ -1326,20 +1328,20 @@ const PAGE_SIZE = 25;
 
   const _TIMING_HISTORY = 5; // rolling window size
 
-  function _getEstimate(key, fallback) {
-    try {
-      const stored = JSON.parse(localStorage.getItem(key) || '[]');
-      if (!stored.length) return fallback;
-      return Math.round(stored.reduce((a, b) => a + b, 0) / stored.length);
-    } catch { return fallback; }
+  function _getEstimate(stateKey, fallback) {
+    const stored = pipelineState[stateKey] || [];
+    if (!stored.length) return fallback;
+    return Math.round(stored.reduce((a, b) => a + b, 0) / stored.length);
   }
 
-  function _recordTiming(key, elapsedSeconds) {
-    try {
-      const stored = JSON.parse(localStorage.getItem(key) || '[]');
-      stored.push(Math.round(elapsedSeconds));
-      localStorage.setItem(key, JSON.stringify(stored.slice(-_TIMING_HISTORY)));
-    } catch {}
+  function _recordTiming(stateKey, elapsedSeconds) {
+    const updated = [...(pipelineState[stateKey] || []), Math.round(elapsedSeconds)].slice(-_TIMING_HISTORY);
+    pipelineState[stateKey] = updated;
+    fetch('/api/profile', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ [stateKey]: updated }),
+    }).catch(err => console.error('Failed to persist timing:', err));
   }
 
   function _createProgressBar(label, estimatedSeconds) {
@@ -1370,10 +1372,10 @@ const PAGE_SIZE = 25;
 
   function startRubricProgress() {
     _rubricStart = Date.now();
-    _rubricBar = _createProgressBar('Generating rubric\u2026', _getEstimate('timing:rubric', 55));
+    _rubricBar = _createProgressBar('Generating rubric\u2026', _getEstimate('rubricTimings', 55));
   }
   function finishRubricProgress() {
-    if (_rubricStart) _recordTiming('timing:rubric', (Date.now() - _rubricStart) / 1000);
+    if (_rubricStart) _recordTiming('rubricTimings', (Date.now() - _rubricStart) / 1000);
     _rubricBar?.finish(); _rubricBar = null; _rubricStart = null;
   }
   function resetRubricProgress()  { _rubricBar?.reset();  _rubricBar = null; _rubricStart = null; }
