@@ -326,7 +326,7 @@ const PAGE_SIZE = 25;
       interest:        'under-consideration',
       interestHistory: [{ interest: 'under-consideration', timestamp: new Date().toISOString() }],
       status:          'bookmarked',
-      statusHistory:   [{ status: 'bookmarked', timestamp: new Date().toISOString() }],
+      statusHistory:   [{ status: 'bookmarked', ordinal: STATUS_ORDER['bookmarked'], timestamp: new Date().toISOString() }],
       notes:         '',
       addedAt:       new Date().toISOString(),
       evalStatus:    'pending',
@@ -1176,7 +1176,7 @@ const PAGE_SIZE = 25;
     if (!entry) return;
     const existing = entry.statusHistory && entry.statusHistory.length
       ? entry.statusHistory
-      : [{ status: 'bookmarked', timestamp: entry.createdAt }];
+      : [{ status: 'bookmarked', ordinal: STATUS_ORDER['bookmarked'], timestamp: entry.createdAt }];
     const newOrd = STATUS_ORDER[status] ?? 0;
     let cutIdx = existing.length;
     for (let i = 0; i < existing.length; i++) {
@@ -1185,7 +1185,7 @@ const PAGE_SIZE = 25;
     const kept = existing.slice(0, cutIdx);
     const history = kept.length > 0 && kept[kept.length - 1].status === status
       ? kept
-      : [...kept, { status, timestamp: new Date().toISOString() }];
+      : [...kept, { status, ordinal: STATUS_ORDER[status], timestamp: new Date().toISOString() }];
     entry.status = status;
     entry.statusHistory = history;
     btn.closest('.drawer-status-options').querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('active'));
