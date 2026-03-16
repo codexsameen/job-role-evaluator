@@ -799,6 +799,45 @@ textarea { resize: vertical; min-height: 80px; line-height: 1.6; padding: 14px; 
 .status-option-btn[data-status="rejected"].active     { border-color: var(--danger);        color: var(--danger); }
 .status-option-btn.active { background: var(--surface); }
 
+/* Timeline */
+.timeline { position: relative; padding-left: 18px; }
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--border);
+}
+.timeline-entry {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+.timeline-dot {
+  position: absolute;
+  left: -17px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+.timeline-dot--bookmarked   { border-color: var(--muted); }
+.timeline-dot--applied      { border-color: var(--interest-blue); background: var(--interest-blue); }
+.timeline-dot--phone-screen { border-color: var(--accent);        background: var(--accent); }
+.timeline-dot--interview    { border-color: var(--accent2);       background: var(--accent2); }
+.timeline-dot--offer        { border-color: var(--accent2);       background: var(--accent2); }
+.timeline-dot--rejected     { border-color: var(--danger);        background: var(--danger); }
+.timeline-entry--latest .timeline-dot { width: 13px; height: 13px; left: -18px; }
+.timeline-content { display: flex; align-items: baseline; gap: 8px; }
+.timeline-status  { font-size: 13px; color: var(--text); }
+.timeline-time    { font-size: 11px; color: var(--muted); }
+
 .drawer-verdict-pending { color: var(--muted); font-size: 18px; }
 .drawer-evaluated-at { font-size: 10px; color: var(--muted); margin-top: 6px; }
 
