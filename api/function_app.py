@@ -489,15 +489,37 @@ def put_profile(req: func.HttpRequest) -> func.HttpResponse:
 
 
 # ---------------------------------------------------------------------------
+# Fixed rubric dimensions — IDs, titles, and weights are immutable.
+# The LLM personalises only the items and signals within each section.
+# ---------------------------------------------------------------------------
+FIXED_SECTIONS = {
+    1: ("Compensation & Benefits", 30),
+    2: ("Role & Technical Fit",    25),
+    3: ("Growth & Learning",       20),
+    4: ("Culture & Team",          15),
+    5: ("Work Arrangement",        10),
+}
+
+
+# ---------------------------------------------------------------------------
 # Rubric validation (shared by generate and manual-edit endpoints)
 # ---------------------------------------------------------------------------
 def _validate_rubric(rubric):
-    weight_sum = sum(s["weight"] for s in rubric.get("sections", []))
-    if weight_sum != 100:
-        raise ValueError(f"Weights sum to {weight_sum}, expected 100")
-    for s in rubric["sections"]:
-        if not s.get("id") or not s.get("title") or not s.get("items"):
-            raise ValueError("Section missing required keys")
+    sections = rubric.get("sections", [])
+    if len(sections) != len(FIXED_SECTIONS):
+        raise ValueError(f"Expected {len(FIXED_SECTIONS)} sections, got {len(sections)}")
+    for s in sections:
+        sid = s.get("id")
+        expected = FIXED_SECTIONS.get(sid)
+        if not expected:
+            raise ValueError(f"Unexpected section id {sid}")
+        exp_title, exp_weight = expected
+        if s.get("title") != exp_title:
+            raise ValueError(f"Section {sid} title must be '{exp_title}'")
+        if s.get("weight") != exp_weight:
+            raise ValueError(f"Section {sid} weight must be {exp_weight}")
+        if not s.get("items"):
+            raise ValueError(f"Section {sid} has no items")
     if not rubric.get("knockouts"):
         raise ValueError("No knockouts defined")
 

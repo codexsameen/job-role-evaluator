@@ -2,7 +2,7 @@ system: |
   You are a job evaluation rubric designer. You return only valid JSON, no markdown, no explanation.
 
 user: |
-  Design a personalised job evaluation rubric for the following candidate:
+  Generate a personalised job evaluation rubric for the following candidate:
 
   Role target: {role_title}
   Location: {location}
@@ -15,18 +15,32 @@ user: |
 
   ---
 
-  Generate a JSON rubric that allows this specific candidate to evaluate job postings against their priorities.
+  The rubric has exactly 5 fixed sections. You MUST use these IDs, titles, and weights exactly as
+  shown — do not change them. Only generate the `items` array for each section.
 
-  Requirements:
-  - 4 to 6 sections, each with a unique integer id (starting at 1)
-  - Each section has 4 to 7 items
-  - Section weights must be integers that sum to exactly 100
-  - Each item has: question (string), signals (string), max (integer, 2–4)
-  - Tailor knockouts, section titles, weights, questions and signals to reflect the candidate's specific role, skills, location, and goals
-  - The compensation section must reference the candidate's local currency and expected salary range
-  - Include 4–6 knockout flags relevant to this candidate's situation
+  Fixed sections:
+    id: 1, title: "Compensation & Benefits", weight: 30
+    id: 2, title: "Role & Technical Fit",    weight: 25
+    id: 3, title: "Growth & Learning",       weight: 20
+    id: 4, title: "Culture & Team",          weight: 15
+    id: 5, title: "Work Arrangement",        weight: 10
 
-  Format example (follow this schema exactly):
+  Per section, generate 4–6 items tailored to the candidate's profile.
+  Each item has:
+    question  — a specific question to score from the job description
+    signals   — comma-separated signals to look for in the JD
+    max       — integer between 2 and 4 (maximum score for this item)
+    labels    — array of exactly (max + 1) strings, one label per score from 0 to max
+
+  Section 1 items must reference the candidate's local currency ({currency_symbol}) and
+  expected compensation range ({comp_min}–{comp_max}).
+
+  Also generate:
+    - meta: eyebrow, title (with <em> tag), subtitle
+    - knockouts: 4–6 flags personalised to this candidate's situation
+      Each knockout has: label (human-readable heading), detail (one sentence explaining it)
+
+  Format (follow this schema exactly):
   {{
     "meta": {{
       "eyebrow": "<Role Title> · <Location> · <Year>",
@@ -34,21 +48,45 @@ user: |
       "subtitle": "Score job descriptions against your priorities."
     }},
     "knockouts": [
-      {{"label": "<human readable heading, e.g. 'Requires 5-day on-site attendance'>", "detail": "<one sentence explaining the disqualifier>"}}
+      {{"label": "<heading e.g. 'Requires 5-day on-site'>", "detail": "<one sentence disqualifier>"}}
     ],
     "sections": [
       {{
         "id": 1,
-        "title": "<Section Title>",
-        "weight": 35,
+        "title": "Compensation & Benefits",
+        "weight": 30,
         "items": [
           {{
             "question": "<question to score from JD>",
-            "signals": "<comma-separated signals to look for>",
+            "signals": "<comma-separated signals>",
             "max": 3,
-            "labels": ["<score 0 label>", "<score 1 label>", "<score 2 label>", "<score 3 label>"]
+            "labels": ["<score 0>", "<score 1>", "<score 2>", "<score 3>"]
           }}
         ]
+      }},
+      {{
+        "id": 2,
+        "title": "Role & Technical Fit",
+        "weight": 25,
+        "items": [ ... ]
+      }},
+      {{
+        "id": 3,
+        "title": "Growth & Learning",
+        "weight": 20,
+        "items": [ ... ]
+      }},
+      {{
+        "id": 4,
+        "title": "Culture & Team",
+        "weight": 15,
+        "items": [ ... ]
+      }},
+      {{
+        "id": 5,
+        "title": "Work Arrangement",
+        "weight": 10,
+        "items": [ ... ]
       }}
     ]
   }}
