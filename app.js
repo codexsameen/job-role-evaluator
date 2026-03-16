@@ -1141,7 +1141,11 @@ const PAGE_SIZE = 25;
   async function updateStatus(id, status, btn) {
     const entry = pipelineState.queue.find(e => e.id === id);
     if (!entry) return;
-    const history = [...(entry.statusHistory || []), { status, timestamp: new Date().toISOString() }];
+    const existing = entry.statusHistory || [];
+    const lastIdx = existing.map(h => h.status).lastIndexOf(status);
+    const history = lastIdx !== -1
+      ? existing.slice(0, lastIdx + 1)
+      : [...existing, { status, timestamp: new Date().toISOString() }];
     entry.status = status;
     entry.statusHistory = history;
     btn.closest('.drawer-status-options').querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('active'));
