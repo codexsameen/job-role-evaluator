@@ -432,6 +432,15 @@ const PAGE_SIZE = 25;
 
   // ── PIPELINE STATE ────────────────────────────────────────────────────────
 
+  const STATUS_ORDER = {
+    'bookmarked':   0,
+    'applied':      1,
+    'phone-screen': 2,
+    'interview':    3,
+    'offer':        4,
+    'rejected':     5,
+  };
+
   const STATUS_LABELS = {
     'bookmarked':   'Bookmarked',
     'applied':      'Applied',
@@ -1160,10 +1169,15 @@ const PAGE_SIZE = 25;
     const existing = entry.statusHistory && entry.statusHistory.length
       ? entry.statusHistory
       : [{ status: 'bookmarked', timestamp: entry.createdAt }];
-    const lastIdx = existing.map(h => h.status).lastIndexOf(status);
-    const history = lastIdx !== -1
-      ? existing.slice(0, lastIdx + 1)
-      : [...existing, { status, timestamp: new Date().toISOString() }];
+    const newOrd = STATUS_ORDER[status] ?? 0;
+    let cutIdx = existing.length;
+    for (let i = 0; i < existing.length; i++) {
+      if ((STATUS_ORDER[existing[i].status] ?? 0) > newOrd) { cutIdx = i; break; }
+    }
+    const kept = existing.slice(0, cutIdx);
+    const history = kept.length > 0 && kept[kept.length - 1].status === status
+      ? kept
+      : [...kept, { status, timestamp: new Date().toISOString() }];
     entry.status = status;
     entry.statusHistory = history;
     btn.closest('.drawer-status-options').querySelectorAll('.status-option-btn').forEach(b => b.classList.remove('active'));
