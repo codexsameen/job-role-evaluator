@@ -323,9 +323,10 @@ const PAGE_SIZE = 25;
       scores:     {},
       reasoning:  {},
       knockouts:  [],
-      interest:      'under-consideration',
-      status:        'bookmarked',
-      statusHistory: [{ status: 'bookmarked', timestamp: new Date().toISOString() }],
+      interest:        'under-consideration',
+      interestHistory: [{ interest: 'under-consideration', timestamp: new Date().toISOString() }],
+      status:          'bookmarked',
+      statusHistory:   [{ status: 'bookmarked', timestamp: new Date().toISOString() }],
       notes:         '',
       addedAt:       new Date().toISOString(),
       evalStatus:    'pending',
@@ -1139,12 +1140,17 @@ const PAGE_SIZE = 25;
   async function updateInterest(id, level, btn) {
     const entry = pipelineState.queue.find(e => e.id === id);
     if (!entry) return;
+    const existing = entry.interestHistory && entry.interestHistory.length
+      ? entry.interestHistory
+      : [{ interest: entry.interest || 'under-consideration', timestamp: entry.createdAt }];
+    const interestHistory = [...existing, { interest: level, timestamp: new Date().toISOString() }];
     entry.interest = level;
+    entry.interestHistory = interestHistory;
     btn.closest('.drawer-interest-options').querySelectorAll('.interest-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderSummary();
     renderTable();
-    await patchEntry(id, { interest: level });
+    await patchEntry(id, { interest: level, interestHistory });
     triggerBayesUpdate();
   }
 
