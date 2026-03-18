@@ -1142,6 +1142,7 @@ const PAGE_SIZE = 25;
 
     document.getElementById('drawer').classList.add('open');
     document.getElementById('drawer-backdrop').classList.add('open');
+    document.body.style.overflow = 'hidden';
 
     renderSummary();
     renderTable();
@@ -1151,6 +1152,7 @@ const PAGE_SIZE = 25;
     pipelineState.activeId = null;
     document.getElementById('drawer').classList.remove('open');
     document.getElementById('drawer-backdrop').classList.remove('open');
+    document.body.style.overflow = '';
     renderSummary();
     renderTable();
   }
