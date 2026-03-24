@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — Role Evaluator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&display=swap" rel="stylesheet">
+  <style>
+    /* ── TOKENS (mirrors styles.css) ────────────────────────────────────────── */
+    :root {
+      --bg:      #0e0e0e;
+      --surface: #161616;
+      --border:  #2a2a2a;
+      --text:    #e8e4dc;
+      --muted:   #6b6760;
+      --accent:  #c8a96e;
+    }
+    body.light {
+      --bg:      #f5f0e8;
+      --surface: #ede8de;
+      --border:  #c8bfaa;
+      --text:    #1a1612;
+      --muted:   #7a7060;
+    }
+
+    /* ── BASE ────────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body, body * { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    /* ── CARD ────────────────────────────────────────────────────────────────── */
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 360px;
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 32px 24px; }
+    }
+
+    /* ── HEADER ──────────────────────────────────────────────────────────────── */
+    .eyebrow {
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    h1 em { font-style: italic; color: var(--accent); }
+    .subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+
+    /* ── BUTTON ──────────────────────────────────────────────────────────────── */
+    .login-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 11px 16px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .login-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-icon {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      fill: currentColor;
+    }
+
+    /* ── THEME TOGGLE ────────────────────────────────────────────────────────── */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 8px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, color 0.15s ease;
+    }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">◐</button>
+
+  <div class="login-card">
+    <div class="eyebrow">Job Role Evaluator</div>
+    <h1><em>Welcome!</em></h1>
+    <p class="subtitle">Be objective. Find your dream job. Sign in to continue.</p>
+    <a class="login-btn" href="/.auth/login/github?post_login_redirect_uri=/">
+      <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.49.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0 1 12 6.8c.85 0 1.71.11 2.51.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 22 12c0-5.52-4.48-10-10-10z"/>
+      </svg>
+      Login with GitHub
+    </a>
+  </div>
+
+  <script>
+    (function () {
+      const saved = localStorage.getItem('theme') || 'dark';
+      if (saved === 'light') document.body.classList.add('light');
+      document.getElementById('theme-toggle').textContent = saved === 'light' ? '◑' : '◐';
+    })();
+
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      document.getElementById('theme-toggle').textContent = isLight ? '◑' : '◐';
+    }
+
+    // Redirect authenticated users away from login page
+    fetch('/.auth/me')
+      .then(r => r.json())
+      .then(data => { if (data.clientPrincipal) window.location.replace('/'); })
+      .catch(() => {});
+  </script>
+</body>
+</html>
