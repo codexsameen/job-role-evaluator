@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 
 from shared.auth import get_user_id
-from shared.db import get_container, get_profiles_container
+from shared.db import get_entities_container, get_profiles_container, get_rubric, get_preferences
 
 # ---------------------------------------------------------------------------
 # OpenAI client — initialised once at module load
@@ -103,7 +103,6 @@ def fetch_jd_from_url(url: str) -> str:
 # Content + prompt helpers
 # ---------------------------------------------------------------------------
 
-
 def _load_yaml_prompt(filename):
     base = os.path.dirname(__file__)
     candidates = [
@@ -190,7 +189,7 @@ def compute_bayes_weights(entries, rubric, prior_strength=15):
     Posterior weight_k ∝ α_k + pos_k − 0.5·neg_k, floored at 0.1 to keep
     all sections active, then renormalised to sum=100.
     """
-    sections   = rubric.get("sections", [])
+    sections    = rubric.get("sections", [])
     section_ids = [str(s["id"]) for s in sections]
     prior_alpha = {str(s["id"]): prior_strength * (s["weight"] / 100.0) for s in sections}
 
@@ -246,12 +245,12 @@ def compute_scores(content, raw_scores):
     weighted = {}
     clamped_scores = {}
     for section in content["sections"]:
-        sid         = str(section["id"])
-        items       = section["items"]
-        max_w       = section["weight"]
-        raw         = raw_scores.get(sid, [])
-        clamped     = [max(0, min(int(raw[i]), items[i]["max"])) if i < len(raw) else 0
-                       for i in range(len(items))]
+        sid        = str(section["id"])
+        items      = section["items"]
+        max_w      = section["weight"]
+        raw        = raw_scores.get(sid, [])
+        clamped    = [max(0, min(int(raw[i]), items[i]["max"])) if i < len(raw) else 0
+                      for i in range(len(items))]
         clamped_scores[sid] = clamped
         actual_max  = sum(item["max"] for item in items)
         section_sum = sum(clamped)
@@ -259,233 +258,6 @@ def compute_scores(content, raw_scores):
 
     total = sum(weighted.values())
     return weighted, total, clamped_scores
-
-
-app = func.FunctionApp()
-
-
-# ---------------------------------------------------------------------------
-# GET /api/queue
-# ---------------------------------------------------------------------------
-@app.route(route="queue", methods=["GET"])
-def get_queue(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    if user_id is None:
-        return func.HttpResponse("Unauthorized", status_code=401)
-
-    try:
-        container = get_container()
-        query = "SELECT TOP 500 * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC"
-        params = [{"name": "@userId", "value": user_id}]
-        items = list(container.query_items(query=query, parameters=params))
-        return func.HttpResponse(
-            json.dumps(items),
-            status_code=200,
-            mimetype="application/json",
-        )
-    except Exception as e:
-        logging.exception("GET /api/queue failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# POST /api/queue
-# ---------------------------------------------------------------------------
-@app.route(route="queue", methods=["POST"])
-def post_queue(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    if user_id is None:
-        return func.HttpResponse("Unauthorized", status_code=401)
-
-    try:
-        body = req.get_json()
-    except ValueError:
-        return func.HttpResponse("Invalid JSON body", status_code=400)
-
-    item = {
-        "id":        str(uuid.uuid4()),
-        "userId":    user_id,
-        "createdAt": datetime.now(timezone.utc).isoformat(),
-        **body,
-    }
-    item["userId"] = user_id
-
-    try:
-        container = get_container()
-        container.create_item(body=item)
-        return func.HttpResponse(
-            json.dumps(item),
-            status_code=201,
-            mimetype="application/json",
-        )
-    except Exception as e:
-        logging.exception("POST /api/queue failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# GET /api/queue/{id}
-# ---------------------------------------------------------------------------
-@app.route(route="queue/{id}", methods=["GET"])
-def get_queue_item(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    item_id = req.route_params.get("id")
-    try:
-        container = get_container()
-        item = container.read_item(item=item_id, partition_key=user_id)
-        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
-    except Exception as e:
-        err = str(e)
-        if "404" in err or "NotFound" in err:
-            return func.HttpResponse("Item not found", status_code=404)
-        logging.exception("GET /api/queue/{id} failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# PATCH /api/queue/{id}
-# ---------------------------------------------------------------------------
-@app.route(route="queue/{id}", methods=["PATCH"])
-def patch_queue_item(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    item_id = req.route_params.get("id")
-    try:
-        body = req.get_json()
-    except ValueError:
-        return func.HttpResponse("Invalid JSON body", status_code=400)
-
-    try:
-        container = get_container()
-        item = container.read_item(item=item_id, partition_key=user_id)
-        item.update(body)
-        container.replace_item(item=item_id, body=item)
-        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
-    except Exception as e:
-        err = str(e)
-        if "404" in err or "NotFound" in err:
-            return func.HttpResponse("Item not found", status_code=404)
-        logging.exception("PATCH /api/queue/{id} failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# DELETE /api/queue/{id}
-# ---------------------------------------------------------------------------
-@app.route(route="queue/{id}", methods=["DELETE"])
-def delete_queue_item(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    if user_id is None:
-        return func.HttpResponse("Unauthorized", status_code=401)
-
-    item_id = req.route_params.get("id")
-    if not item_id:
-        return func.HttpResponse("Missing item id", status_code=400)
-
-    try:
-        container = get_container()
-        container.delete_item(item=item_id, partition_key=user_id)
-        return func.HttpResponse(status_code=204)
-    except Exception as e:
-        err = str(e)
-        if "404" in err or "NotFound" in err:
-            return func.HttpResponse("Item not found", status_code=404)
-        logging.exception("DELETE /api/queue/{id} failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# DELETE /api/queue
-# ---------------------------------------------------------------------------
-@app.route(route="queue", methods=["DELETE"])
-def delete_queue(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    if user_id is None:
-        return func.HttpResponse("Unauthorized", status_code=401)
-
-    try:
-        container = get_container()
-        query = "SELECT c.id FROM c WHERE c.userId = @userId"
-        params = [{"name": "@userId", "value": user_id}]
-        items = list(container.query_items(query=query, parameters=params))
-
-        BATCH_SIZE = 100  # Cosmos transactional batch limit
-        for i in range(0, len(items), BATCH_SIZE):
-            chunk = items[i:i + BATCH_SIZE]
-            operations = [("delete", item["id"], {}) for item in chunk]
-            container.execute_item_batch(batch_operations=operations, partition_key=user_id)
-        return func.HttpResponse(
-            json.dumps({"deleted": len(items)}),
-            status_code=200,
-            mimetype="application/json",
-        )
-    except Exception as e:
-        logging.exception("DELETE /api/queue failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# GET /api/profile
-# ---------------------------------------------------------------------------
-@app.route(route="profile", methods=["GET"])
-def get_profile(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    try:
-        profiles = get_profiles_container()
-        doc = profiles.read_item(item=user_id, partition_key=user_id)
-
-        # Heal stuck "generating" state if thread was lost (e.g. host recycle)
-        if doc.get("rubricStatus") == "generating":
-            started = doc.get("rubricGenerationStartedAt")
-            if started:
-                age = datetime.now(timezone.utc) - datetime.fromisoformat(started)
-                if age.total_seconds() > 300:  # 5 minutes
-                    doc["rubricStatus"] = "error"
-                    doc.pop("rubricGenerationStartedAt", None)
-                    profiles.upsert_item(body=doc)
-
-        return func.HttpResponse(json.dumps(doc), status_code=200, mimetype="application/json")
-    except Exception as e:
-        if "404" in str(e) or "NotFound" in str(e):
-            return func.HttpResponse("{}", status_code=200, mimetype="application/json")
-        logging.exception("GET /api/profile failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
-
-
-# ---------------------------------------------------------------------------
-# PUT /api/profile
-# ---------------------------------------------------------------------------
-@app.route(route="profile", methods=["PUT"])
-def put_profile(req: func.HttpRequest) -> func.HttpResponse:
-    user_id = get_user_id(req) or "local-dev-user"
-    try:
-        body = req.get_json()
-    except ValueError:
-        return func.HttpResponse("Invalid JSON body", status_code=400)
-
-    try:
-        profiles = get_profiles_container()
-        try:
-            existing = profiles.read_item(item=user_id, partition_key=user_id)
-        except Exception:
-            existing = {"id": user_id, "userId": user_id}
-
-        existing.update(body)
-        existing["id"] = user_id
-        existing["userId"] = user_id
-
-        # Compute displayName
-        parts = [p for p in [
-            existing.get("roleTitle"),
-            existing.get("location"),
-            "2026",
-        ] if p]
-        existing["displayName"] = " · ".join(parts) if parts else "Job Role Evaluator"
-
-        profiles.upsert_item(body=existing)
-        return func.HttpResponse(json.dumps(existing), status_code=200, mimetype="application/json")
-    except Exception as e:
-        logging.exception("PUT /api/profile failed")
-        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
 
 
 # ---------------------------------------------------------------------------
@@ -525,9 +297,144 @@ def _validate_rubric(rubric):
 
 
 # ---------------------------------------------------------------------------
-# PUT /api/profile/rubric  — save a manually edited rubric
+# Internal helpers
 # ---------------------------------------------------------------------------
-@app.route(route="profile/rubric", methods=["PUT"])
+
+def _patch_role_item(user_id: str, role_id: str, patch: dict):
+    """Read a Role document, apply patch, write back. Validates type == 'role'."""
+    entities = get_entities_container()
+    item = entities.read_item(item=role_id, partition_key=user_id)
+    if item.get("type") != "role":
+        raise ValueError(f"Document {role_id} is not a role (type={item.get('type')})")
+    item.update(patch)
+    entities.replace_item(item=role_id, body=item)
+    return item
+
+def _join_roles_and_apps(items):
+    """Merge role + application documents into flat joined objects."""
+    roles = {doc["id"]: doc for doc in items if doc.get("type") == "role"}
+    apps  = {doc["roleId"]: doc for doc in items if doc.get("type") == "application"}
+    result = []
+    for role_id, role in roles.items():
+        app = apps.get(role_id, {})
+        result.append({**role, **app, "id": role_id})
+    return result
+
+_PROFILE_ALLOWED_FIELDS = {
+    "roleTitle", "location", "skills", "backgroundSummary", "careerGoals",
+    "companySizePreference", "workArrangement", "compMin", "compMax",
+    "currencySymbol", "evalTimings", "rubricTimings",
+}
+
+_APPLICATION_ALLOWED_FIELDS = {
+    "interest", "interestHistory", "status", "statusHistory", "notes", "addedAt",
+}
+
+
+app = func.FunctionApp()
+
+
+# ---------------------------------------------------------------------------
+# GET /api/profile
+# ---------------------------------------------------------------------------
+@app.route(route="profile", methods=["GET"])
+def get_profile(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        profiles = get_profiles_container()
+        try:
+            doc = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception as e:
+            if "404" in str(e) or "NotFound" in str(e):
+                return func.HttpResponse("{}", status_code=200, mimetype="application/json")
+            raise
+
+        # Merge preferences (bayes weights) into the response
+        prefs = get_preferences(user_id)
+        if prefs:
+            doc["bayesWeights"]          = prefs.get("bayesWeights")
+            doc["bayesObservationCount"] = prefs.get("bayesObservationCount", 0)
+
+        return func.HttpResponse(json.dumps(doc), status_code=200, mimetype="application/json")
+    except Exception as e:
+        logging.exception("GET /api/profile failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/profile
+# ---------------------------------------------------------------------------
+@app.route(route="profile", methods=["PUT"])
+def put_profile(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    disallowed = set(body.keys()) - _PROFILE_ALLOWED_FIELDS
+    if disallowed:
+        return func.HttpResponse(
+            f"Fields not allowed on profile: {', '.join(sorted(disallowed))}",
+            status_code=400,
+        )
+
+    try:
+        profiles = get_profiles_container()
+        try:
+            existing = profiles.read_item(item=user_id, partition_key=user_id)
+        except Exception:
+            existing = {"id": user_id, "userId": user_id, "type": "profile"}
+
+        existing.update(body)
+        existing["id"]        = user_id
+        existing["userId"]    = user_id
+        existing["type"]      = "profile"
+        existing["updatedAt"] = datetime.now(timezone.utc).isoformat()
+
+        # Compute displayName server-side
+        year = str(datetime.now(timezone.utc).year)
+        parts = [p for p in [existing.get("roleTitle"), existing.get("location"), year] if p]
+        existing["displayName"] = " · ".join(parts) if parts else "Job Role Evaluator"
+
+        profiles.upsert_item(body=existing)
+        return func.HttpResponse(json.dumps(existing), status_code=200, mimetype="application/json")
+    except Exception as e:
+        logging.exception("PUT /api/profile failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/rubric
+# ---------------------------------------------------------------------------
+@app.route(route="rubric", methods=["GET"])
+def get_rubric_handler(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        doc = get_rubric(user_id)
+        if doc is None:
+            return func.HttpResponse("{}", status_code=200, mimetype="application/json")
+
+        # Heal stuck "generating" state if thread was lost (e.g. host recycle)
+        if doc.get("status") == "generating":
+            started = doc.get("generationStartedAt")
+            if started:
+                age = datetime.now(timezone.utc) - datetime.fromisoformat(started)
+                if age.total_seconds() > 300:  # 5 minutes
+                    doc["status"] = "error"
+                    doc.pop("generationStartedAt", None)
+                    get_entities_container().upsert_item(body=doc)
+
+        return func.HttpResponse(json.dumps(doc), status_code=200, mimetype="application/json")
+    except Exception as e:
+        logging.exception("GET /api/rubric failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# PUT /api/rubric  — save a manually edited rubric
+# ---------------------------------------------------------------------------
+@app.route(route="rubric", methods=["PUT"])
 def save_rubric(req: func.HttpRequest) -> func.HttpResponse:
     user_id = get_user_id(req) or "local-dev-user"
 
@@ -542,24 +449,28 @@ def save_rubric(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(str(e), status_code=400)
 
     try:
-        profiles = get_profiles_container()
-        try:
-            existing = profiles.read_item(item=user_id, partition_key=user_id)
-        except Exception:
-            return func.HttpResponse("Profile not found — save profile first", status_code=404)
-
-        existing["rubric"] = rubric
-        profiles.upsert_item(existing)
+        entities = get_entities_container()
+        doc = {
+            "id":          f"rubric-{user_id}",
+            "userId":      user_id,
+            "type":        "rubric",
+            "status":      "done",
+            "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "meta":        rubric.get("meta", {}),
+            "sections":    rubric.get("sections", []),
+            "knockouts":   rubric.get("knockouts", []),
+        }
+        entities.upsert_item(doc)
         return func.HttpResponse(status_code=200)
     except Exception as e:
-        logging.exception("PUT /api/profile/rubric failed")
+        logging.exception("PUT /api/rubric failed")
         return func.HttpResponse(f"Internal server error: {e}", status_code=500)
 
 
 # ---------------------------------------------------------------------------
-# POST /api/profile/generate-rubric
+# POST /api/rubric/generate
 # ---------------------------------------------------------------------------
-@app.route(route="profile/generate-rubric", methods=["POST"])
+@app.route(route="rubric/generate", methods=["POST"])
 def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
     user_id = get_user_id(req) or "local-dev-user"
 
@@ -584,14 +495,20 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
             work_arrangement=profile.get("workArrangement", ""),
         )
 
-        client = get_openai_client()
+        client     = get_openai_client()
         deployment = os.environ["OPENAI_DEPLOYMENT"]
+        entities   = get_entities_container()
+        now        = datetime.now(timezone.utc).isoformat()
 
-        # Mark as generating and return 202 immediately so the HTTP proxy
-        # does not time out waiting for the LLM call to complete.
-        profile["rubricStatus"] = "generating"
-        profile["rubricGenerationStartedAt"] = datetime.now(timezone.utc).isoformat()
-        profiles.upsert_item(body=profile)
+        # Write "generating" state immediately, return 202
+        rubric_doc = {
+            "id":                  f"rubric-{user_id}",
+            "userId":              user_id,
+            "type":                "rubric",
+            "status":              "generating",
+            "generationStartedAt": now,
+        }
+        entities.upsert_item(body=rubric_doc)
 
         def _do_generation():
             try:
@@ -615,21 +532,26 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
                     except (json.JSONDecodeError, ValueError, KeyError) as e:
                         logging.warning("Rubric generation attempt %d failed: %s", attempt + 1, e)
                         if attempt == 1:
-                            profile["rubricStatus"] = "error"
-                            profiles.upsert_item(body=profile)
+                            rubric_doc["status"] = "error"
+                            entities.upsert_item(body=rubric_doc)
                             return
 
-                profile["rubric"] = rubric
-                profile["rubricGeneratedAt"] = datetime.now(timezone.utc).isoformat()
-                profile["rubricStatus"] = "done"
-                profiles.upsert_item(body=profile)
+                rubric_doc.update({
+                    "status":      "done",
+                    "generatedAt": datetime.now(timezone.utc).isoformat(),
+                    "meta":        rubric.get("meta", {}),
+                    "sections":    rubric.get("sections", []),
+                    "knockouts":   rubric.get("knockouts", []),
+                })
+                rubric_doc.pop("generationStartedAt", None)
+                entities.upsert_item(body=rubric_doc)
                 logging.info("Rubric generated successfully for user %s", user_id)
 
             except Exception:
                 logging.exception("Background rubric generation failed for user %s", user_id)
                 try:
-                    profile["rubricStatus"] = "error"
-                    profiles.upsert_item(body=profile)
+                    rubric_doc["status"] = "error"
+                    entities.upsert_item(body=rubric_doc)
                 except Exception:
                     pass
 
@@ -637,7 +559,238 @@ def generate_rubric(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(status_code=202)
 
     except Exception as e:
-        logging.exception("POST /api/profile/generate-rubric failed")
+        logging.exception("POST /api/rubric/generate failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/roles
+# ---------------------------------------------------------------------------
+@app.route(route="roles", methods=["GET"])
+def get_roles(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    try:
+        entities = get_entities_container()
+        query = (
+            "SELECT TOP 500 * FROM c "
+            "WHERE c.userId = @userId AND c.type IN ('role', 'application') "
+            "ORDER BY c.createdAt DESC"
+        )
+        params = [{"name": "@userId", "value": user_id}]
+        items  = list(entities.query_items(query=query, parameters=params))
+        joined = _join_roles_and_apps(items)
+        return func.HttpResponse(
+            json.dumps(joined),
+            status_code=200,
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.exception("GET /api/roles failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/roles
+# ---------------------------------------------------------------------------
+@app.route(route="roles", methods=["POST"])
+def post_role(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    now     = datetime.now(timezone.utc).isoformat()
+    role_id = str(uuid.uuid4())
+
+    # Split incoming payload into role and application fields
+    app_fields = {k: body[k] for k in _APPLICATION_ALLOWED_FIELDS if k in body}
+    role_fields = {k: v for k, v in body.items() if k not in _APPLICATION_ALLOWED_FIELDS}
+
+    role_doc = {
+        "id":        role_id,
+        "userId":    user_id,
+        "type":      "role",
+        "createdAt": now,
+        **role_fields,
+    }
+    app_doc = {
+        "id":      f"app-{role_id}",
+        "userId":  user_id,
+        "type":    "application",
+        "roleId":  role_id,
+        "addedAt": now,
+        **app_fields,
+    }
+
+    try:
+        entities = get_entities_container()
+        entities.execute_item_batch(
+            batch_operations=[
+                ("create", role_doc, {}),
+                ("create", app_doc,  {}),
+            ],
+            partition_key=user_id,
+        )
+        return func.HttpResponse(
+            json.dumps({**role_doc, **app_doc, "id": role_id}),
+            status_code=201,
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.exception("POST /api/roles failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/roles/{id}
+# ---------------------------------------------------------------------------
+@app.route(route="roles/{id}", methods=["GET"])
+def get_role(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    role_id = req.route_params.get("id")
+    try:
+        entities = get_entities_container()
+        role = entities.read_item(item=role_id, partition_key=user_id)
+        try:
+            application = entities.read_item(item=f"app-{role_id}", partition_key=user_id)
+        except Exception:
+            application = {}
+        joined = {**role, **application, "id": role_id}
+        return func.HttpResponse(json.dumps(joined), status_code=200, mimetype="application/json")
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Role not found", status_code=404)
+        logging.exception("GET /api/roles/{id} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# PATCH /api/roles/{id}  — eval lifecycle fields only (evalStatus)
+# ---------------------------------------------------------------------------
+@app.route(route="roles/{id}", methods=["PATCH"])
+def patch_role(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    role_id = req.route_params.get("id")
+
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    # Only evalStatus is writable via this endpoint
+    allowed = {"evalStatus"}
+    disallowed = set(body.keys()) - allowed
+    if disallowed:
+        return func.HttpResponse(
+            f"Fields not allowed on role via PATCH: {', '.join(sorted(disallowed))}",
+            status_code=400,
+        )
+
+    try:
+        item = _patch_role_item(user_id, role_id, body)
+        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Role not found", status_code=404)
+        logging.exception("PATCH /api/roles/{id} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# PATCH /api/applications/{roleId}  — user-facing mutable fields only
+# ---------------------------------------------------------------------------
+@app.route(route="applications/{roleId}", methods=["PATCH"])
+def patch_application(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    role_id = req.route_params.get("roleId")
+
+    try:
+        body = req.get_json()
+    except ValueError:
+        return func.HttpResponse("Invalid JSON body", status_code=400)
+
+    disallowed = set(body.keys()) - _APPLICATION_ALLOWED_FIELDS
+    if disallowed:
+        return func.HttpResponse(
+            f"Fields not allowed on application: {', '.join(sorted(disallowed))}",
+            status_code=400,
+        )
+
+    try:
+        entities = get_entities_container()
+        app_id   = f"app-{role_id}"
+        item     = entities.read_item(item=app_id, partition_key=user_id)
+        item.update(body)
+        entities.replace_item(item=app_id, body=item)
+        return func.HttpResponse(json.dumps(item), status_code=200, mimetype="application/json")
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Application not found", status_code=404)
+        logging.exception("PATCH /api/applications/{roleId} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/roles/{id}
+# ---------------------------------------------------------------------------
+@app.route(route="roles/{id}", methods=["DELETE"])
+def delete_role(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+    role_id = req.route_params.get("id")
+
+    if not role_id:
+        return func.HttpResponse("Missing role id", status_code=400)
+
+    try:
+        entities = get_entities_container()
+        entities.execute_item_batch(
+            batch_operations=[
+                ("delete", role_id,          {}),
+                ("delete", f"app-{role_id}", {}),
+            ],
+            partition_key=user_id,
+        )
+        return func.HttpResponse(status_code=204)
+    except Exception as e:
+        err = str(e)
+        if "404" in err or "NotFound" in err:
+            return func.HttpResponse("Role not found", status_code=404)
+        logging.exception("DELETE /api/roles/{id} failed")
+        return func.HttpResponse(f"Internal server error: {e}", status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/roles
+# ---------------------------------------------------------------------------
+@app.route(route="roles", methods=["DELETE"])
+def delete_roles(req: func.HttpRequest) -> func.HttpResponse:
+    user_id = get_user_id(req) or "local-dev-user"
+
+    try:
+        entities = get_entities_container()
+        query    = "SELECT c.id FROM c WHERE c.userId = @userId AND c.type IN ('role', 'application')"
+        params   = [{"name": "@userId", "value": user_id}]
+        items    = list(entities.query_items(query=query, parameters=params))
+
+        # Batch in chunks of 50 (role + app pairs fit within the 100-op limit)
+        BATCH_SIZE = 50
+        for i in range(0, len(items), BATCH_SIZE):
+            chunk      = items[i:i + BATCH_SIZE]
+            operations = [("delete", item["id"], {}) for item in chunk]
+            entities.execute_item_batch(batch_operations=operations, partition_key=user_id)
+
+        return func.HttpResponse(
+            json.dumps({"deleted": len(items)}),
+            status_code=200,
+            mimetype="application/json",
+        )
+    except Exception as e:
+        logging.exception("DELETE /api/roles failed")
         return func.HttpResponse(f"Internal server error: {e}", status_code=500)
 
 
@@ -688,27 +841,31 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     except ValueError:
         return func.HttpResponse("Invalid JSON body", status_code=400)
 
-    jd_text  = body.get("jd_text", "").strip()
-    url      = body.get("url", "").strip()
-    queue_id = body.get("queue_id", "").strip()
+    jd_text = body.get("jd_text", "").strip()
+    url     = body.get("url", "").strip()
+    role_id = body.get("role_id", "").strip()
 
     if not jd_text:
         return func.HttpResponse("jd_text is required", status_code=400)
-    if not queue_id:
-        return func.HttpResponse("queue_id is required", status_code=400)
+    if not role_id:
+        return func.HttpResponse("role_id is required", status_code=400)
 
-    # Load profile + rubric from Cosmos
+    # Load rubric from entities
+    rubric = get_rubric(user_id)
+    if not rubric or rubric.get("status") != "done":
+        return func.HttpResponse(
+            "No rubric found. Please generate a rubric from your profile first.",
+            status_code=400,
+        )
+
+    # Load profile for candidate context
     profile = {}
     try:
-        profiles = get_profiles_container()
-        profile = profiles.read_item(item=user_id, partition_key=user_id)
+        profile = get_profiles_container().read_item(item=user_id, partition_key=user_id)
     except Exception:
         pass
 
-    if not profile.get("rubric"):
-        return func.HttpResponse("No rubric found. Please generate a rubric from your profile first.", status_code=400)
-
-    content           = profile["rubric"]
+    content           = rubric
     candidate_profile = _profile_to_candidate_string(profile) or None
     system_message, user_message = build_prompt(content, jd_text, candidate_profile)
 
@@ -731,23 +888,23 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
                 model_output = json.loads(raw_text)
             except json.JSONDecodeError:
                 logging.error("Model returned non-JSON: %s", raw_text)
-                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+                _patch_role_item(user_id, role_id, {"evalStatus": "error"})
                 return
 
-            raw_scores = model_output.get("scores", {})
-            reasoning  = model_output.get("reasoning", {})
-            knockouts  = model_output.get("knockouts", [])
-            company      = model_output.get("company", "Unknown")
-            role         = model_output.get("role", "Unknown")
-            comp_min     = model_output.get("comp_min")
-            comp_max     = model_output.get("comp_max")
+            raw_scores    = model_output.get("scores", {})
+            reasoning     = model_output.get("reasoning", {})
+            knockouts     = model_output.get("knockouts", [])
+            company       = model_output.get("company", "Unknown")
+            role          = model_output.get("role", "Unknown")
+            comp_min      = model_output.get("comp_min")
+            comp_max      = model_output.get("comp_max")
             comp_currency = model_output.get("comp_currency")
 
             expected_ids = {str(s["id"]) for s in content["sections"]}
             actual_ids   = set(raw_scores.keys())
             if expected_ids != actual_ids:
                 logging.error("Score key mismatch: expected %s, got %s", expected_ids, actual_ids)
-                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+                _patch_role_item(user_id, role_id, {"evalStatus": "error"})
                 return
 
             weighted, total, clamped_scores = compute_scores(content, raw_scores)
@@ -770,13 +927,13 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
                 "evalStatus":   "evaluated",
                 "evaluatedAt":  datetime.now(timezone.utc).isoformat(),
             }
-            _patch_queue_item(user_id, queue_id, patch)
-            logging.info("Evaluation complete for queue item %s", queue_id)
+            _patch_role_item(user_id, role_id, patch)
+            logging.info("Evaluation complete for role %s", role_id)
 
         except Exception:
-            logging.exception("Background evaluation failed for queue item %s", queue_id)
+            logging.exception("Background evaluation failed for role %s", role_id)
             try:
-                _patch_queue_item(user_id, queue_id, {"evalStatus": "error"})
+                _patch_role_item(user_id, role_id, {"evalStatus": "error"})
             except Exception:
                 pass
 
@@ -784,43 +941,48 @@ def evaluate(req: func.HttpRequest) -> func.HttpResponse:
     return func.HttpResponse(status_code=202)
 
 
-def _patch_queue_item(user_id: str, item_id: str, patch: dict):
-    container = get_container()
-    item = container.read_item(item=item_id, partition_key=user_id)
-    item.update(patch)
-    container.replace_item(item=item_id, body=item)
-
-
 # ---------------------------------------------------------------------------
-# POST /api/profile/bayes-update
+# POST /api/preferences/bayes-update
 # ---------------------------------------------------------------------------
-@app.route(route="profile/bayes-update", methods=["POST"])
+@app.route(route="preferences/bayes-update", methods=["POST"])
 def bayes_update(req: func.HttpRequest) -> func.HttpResponse:
     user_id = get_user_id(req) or "local-dev-user"
 
     try:
-        profiles = get_profiles_container()
-        try:
-            profile = profiles.read_item(item=user_id, partition_key=user_id)
-        except Exception:
-            return func.HttpResponse("Profile not found", status_code=404)
-
-        rubric = profile.get("rubric")
-        if not rubric:
+        rubric = get_rubric(user_id)
+        if not rubric or rubric.get("status") != "done":
             return func.HttpResponse("No rubric found", status_code=400)
 
-        prior_strength = profile.get("bayesPriorStrength", 15)
+        prefs          = get_preferences(user_id)
+        prior_strength = prefs.get("bayesPriorStrength", 15)
 
-        container = get_container()
-        query  = "SELECT * FROM c WHERE c.userId = @userId AND c.evalStatus = 'evaluated'"
-        params = [{"name": "@userId", "value": user_id}]
-        entries = list(container.query_items(query=query, parameters=params))
+        entities = get_entities_container()
+
+        roles_query = (
+            "SELECT * FROM c WHERE c.userId = @userId "
+            "AND c.type = 'role' AND c.evalStatus = 'evaluated'"
+        )
+        apps_query = "SELECT * FROM c WHERE c.userId = @userId AND c.type = 'application'"
+        params     = [{"name": "@userId", "value": user_id}]
+
+        roles = list(entities.query_items(query=roles_query, parameters=params))
+        apps  = list(entities.query_items(query=apps_query,  parameters=params))
+
+        apps_by_role = {a["roleId"]: a for a in apps}
+        entries      = [{**r, **apps_by_role.get(r["id"], {})} for r in roles]
 
         bayes_weights, obs_count = compute_bayes_weights(entries, rubric, prior_strength)
 
-        profile["bayesWeights"]         = bayes_weights
-        profile["bayesObservationCount"] = obs_count
-        profiles.upsert_item(profile)
+        prefs_doc = {
+            "id":                    f"prefs-{user_id}",
+            "userId":                user_id,
+            "type":                  "preferences",
+            "bayesWeights":          bayes_weights,
+            "bayesObservationCount": obs_count,
+            "bayesPriorStrength":    prior_strength,
+            "updatedAt":             datetime.now(timezone.utc).isoformat(),
+        }
+        get_profiles_container().upsert_item(prefs_doc)
 
         return func.HttpResponse(
             json.dumps({"bayesWeights": bayes_weights, "bayesObservationCount": obs_count}),
@@ -828,5 +990,5 @@ def bayes_update(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
         )
     except Exception as e:
-        logging.exception("POST /api/profile/bayes-update failed")
+        logging.exception("POST /api/preferences/bayes-update failed")
         return func.HttpResponse(f"Internal server error: {e}", status_code=500)

@@ -23,9 +23,10 @@ const PAGE_SIZE = 25;
   async function init() {
     applyTheme(localStorage.getItem('theme') || 'dark');
     try {
-      const [profile, queueData] = await Promise.all([
+      const [profile, rubric, rolesData] = await Promise.all([
         fetch('/api/profile').then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/queue').then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch('/api/rubric').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/roles').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
 
       _currentProfile = profile;
@@ -34,24 +35,24 @@ const PAGE_SIZE = 25;
         document.querySelector('.eyebrow').textContent = profile.displayName;
       }
 
-      CONTENT = profile?.rubric || null;
+      CONTENT = (rubric?.status === 'done' && rubric?.sections) ? rubric : null;
       pipelineState.bayesWeights  = profile?.bayesWeights  || null;
       pipelineState.bayesObsCount = profile?.bayesObservationCount || 0;
       pipelineState.evalTimings   = profile?.evalTimings   || [];
       pipelineState.rubricTimings = profile?.rubricTimings || [];
       document.getElementById('view-rubric-btn').hidden = !CONTENT;
 
-      queue = queueData || [];
+      queue = rolesData || [];
       renderSummary();
       renderTable();
       setupUrlField();
 
-      if (profile?.rubricStatus === 'generating') {
+      if (rubric?.status === 'generating') {
         // Page reloaded mid-generation — resume polling without showing the modal
         setEvaluateBtnState(true, 'Generating rubric…');
         startRubricProgress();
         _pollForRubric();
-      } else if (!profile?.rubricGeneratedAt) {
+      } else if (!rubric?.generatedAt) {
         showProfileModal(profile);
       }
     } catch (err) {
@@ -158,7 +159,7 @@ const PAGE_SIZE = 25;
     }
 
     // Hide cancel button on first-time setup (no rubric yet)
-    const hasRubric = !!(profile?.rubricGeneratedAt);
+    const hasRubric = !!CONTENT;
     const cancelBtn = document.getElementById('profile-cancel-btn');
     if (cancelBtn) cancelBtn.style.display = hasRubric ? '' : 'none';
 
@@ -225,7 +226,7 @@ const PAGE_SIZE = 25;
       btn.textContent = 'Generating…';
 
       // Kick off rubric generation — returns 202 immediately, runs in background
-      const rubrRes = await fetch('/api/profile/generate-rubric', {
+      const rubrRes = await fetch('/api/rubric/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -264,17 +265,17 @@ const PAGE_SIZE = 25;
       for (let i = 0; i < 15; i++) {
         const delay = Math.min(2000 * Math.pow(2, i), 15000);
         await new Promise(r => setTimeout(r, delay));
-        const pollRes = await fetch('/api/profile');
+        const pollRes = await fetch('/api/rubric');
         if (!pollRes.ok) continue;
         const polled = await pollRes.json();
-        if (polled.rubricStatus === 'error') {
+        if (polled.status === 'error') {
           resetRubricProgress();
           showToast('Rubric generation failed — open profile to retry');
           setEvaluateBtnState(false, 'Evaluate Role');
           return;
         }
-        if (polled.rubricStatus === 'done' && polled.rubric) {
-          rubric = polled.rubric;
+        if (polled.status === 'done' && polled.sections) {
+          rubric = polled;
           break;
         }
       }
@@ -336,12 +337,12 @@ const PAGE_SIZE = 25;
 
     let pendingEntry;
     try {
-      const res = await fetch('/api/queue', {
+      const res = await fetch('/api/roles', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(pendingPayload),
       });
-      if (!res.ok) throw new Error(`POST /api/queue ${res.status}`);
+      if (!res.ok) throw new Error(`POST /api/roles ${res.status}`);
       pendingEntry = await res.json();
     } catch (err) {
       showToast('Failed to queue role — please try again');
@@ -364,14 +365,14 @@ const PAGE_SIZE = 25;
       const res = await fetch('/api/evaluate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ jd_text: jdText, url, queue_id: pendingEntry.id }),
+        body:    JSON.stringify({ jd_text: jdText, url, role_id: pendingEntry.id }),
       });
       if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
     } catch (err) {
       console.error('runEvaluation failed to start:', err);
       evalBar.reset();
       const patch = { evalStatus: 'error' };
-      await patchEntry(pendingEntry.id, patch);
+      await patchRole(pendingEntry.id, patch);
       const entry = pipelineState.queue.find(e => e.id === pendingEntry.id);
       if (entry) Object.assign(entry, patch);
       renderSummary();
@@ -390,8 +391,8 @@ const PAGE_SIZE = 25;
     async function check() {
       if (stopped) return;
       try {
-        const res = await fetch(`/api/queue/${id}`);
-        if (!res.ok) throw new Error(`GET /api/queue/${id} ${res.status}`);
+        const res = await fetch(`/api/roles/${id}`);
+        if (!res.ok) throw new Error(`GET /api/roles/${id} ${res.status}`);
         const item = await res.json();
 
         if (item.evalStatus === 'evaluated') {
@@ -418,7 +419,7 @@ const PAGE_SIZE = 25;
           return;
         }
       } catch (err) {
-        console.error('Poll /api/queue error:', err);
+        console.error('Poll /api/roles error:', err);
       }
       if (!stopped) setTimeout(check, 3000);
     }
@@ -616,7 +617,7 @@ const PAGE_SIZE = 25;
 
   async function triggerBayesUpdate() {
     try {
-      const res = await fetch('/api/profile/bayes-update', { method: 'POST' });
+      const res = await fetch('/api/preferences/bayes-update', { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         pipelineState.bayesWeights  = data.bayesWeights;
@@ -1256,7 +1257,7 @@ const PAGE_SIZE = 25;
 
   async function patchEntry(id, patch) {
     try {
-      await fetch(`/api/queue/${id}`, {
+      await fetch(`/api/applications/${id}`, {
         method:  'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(patch),
@@ -1264,6 +1265,18 @@ const PAGE_SIZE = 25;
     } catch (err) {
       console.error('patchEntry failed:', err);
       showToast('Failed to save change');
+    }
+  }
+
+  async function patchRole(id, patch) {
+    try {
+      await fetch(`/api/roles/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(patch),
+      });
+    } catch (err) {
+      console.error('patchRole failed:', err);
     }
   }
 
@@ -1275,7 +1288,7 @@ const PAGE_SIZE = 25;
 
     const patch = { evalStatus: 'pending' };
     Object.assign(entry, patch);
-    await patchEntry(id, patch);
+    await patchRole(id, patch);
     closeDrawer();
     renderSummary();
     renderTable();
@@ -1286,7 +1299,7 @@ const PAGE_SIZE = 25;
       const res = await fetch('/api/evaluate', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ jd_text: entry.jdText, url: entry.url || '', queue_id: id }),
+        body:    JSON.stringify({ jd_text: entry.jdText, url: entry.url || '', role_id: id }),
       });
       if (!res.ok) throw new Error(`POST /api/evaluate ${res.status}`);
     } catch (err) {
@@ -1294,7 +1307,7 @@ const PAGE_SIZE = 25;
       evalBar.reset();
       const errPatch = { evalStatus: 'error' };
       Object.assign(entry, errPatch);
-      await patchEntry(id, errPatch);
+      await patchRole(id, errPatch);
       renderSummary();
       renderTable();
       showToast('Re-evaluation failed — please try again');
@@ -1314,8 +1327,8 @@ const PAGE_SIZE = 25;
     showToast('Removed from pipeline');
 
     try {
-      const res = await fetch(`/api/queue/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(`DELETE /api/queue/${id} ${res.status}`);
+      const res = await fetch(`/api/roles/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE /api/roles/${id} ${res.status}`);
     } catch (err) {
       console.error('removeFromQueue failed:', err);
       // Restore the entry on failure
@@ -1411,7 +1424,7 @@ const PAGE_SIZE = 25;
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
     try {
-      const res = await fetch('/api/profile/rubric', {
+      const res = await fetch('/api/rubric', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(rubric),
@@ -1481,8 +1494,8 @@ const PAGE_SIZE = 25;
 
   async function confirmClearQueue() {
     try {
-      const res = await fetch('/api/queue', { method: 'DELETE' });
-      if (!res.ok) throw new Error(`DELETE /api/queue ${res.status}`);
+      const res = await fetch('/api/roles', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE /api/roles ${res.status}`);
       pipelineState.queue = [];
       cancelClearQueue();
       renderSummary();
