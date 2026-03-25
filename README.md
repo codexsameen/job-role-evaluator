@@ -28,34 +28,44 @@
 
 ```mermaid
 flowchart TD
-    Browser["Browser (Vanilla JS SPA)"]
+    Browser["Browser — Vanilla JS SPA"]
 
     subgraph SWA["Azure Static Web Apps"]
-        Static["Static Assets: index.html / app.js / styles.css"]
-        Auth["GitHub OAuth: /.auth/login/github"]
-        Proxy["API Proxy: /api/*"]
+        Static["Static Assets"]
+        Auth["GitHub OAuth"]
+        Proxy["API Proxy /api/*"]
     end
 
-    subgraph Functions["Python Azure Functions"]
+    subgraph Functions["Azure Functions — Python"]
         Profile["Profile + Preferences"]
-        Rubric["Rubric Generation (OpenAI, async)"]
+        Rubric["Rubric Generation (async)"]
         Roles["Roles + Applications CRUD"]
-        Fetch["JD Fetch + Scrape (BeautifulSoup4 + httpx)"]
-        Evaluate["Evaluate JD vs Rubric (OpenAI, async)"]
+        Fetch["JD Fetch + Scrape"]
+        Evaluate["Evaluate vs Rubric (async)"]
         Bayes["Bayesian Weight Update"]
     end
 
-    CosmosDB[("Azure Cosmos DB NoSQL: profiles + entities")]
+    CosmosDB[("Cosmos DB NoSQL — profiles + entities")]
 
-    Browser -- HTTPS --> SWA
-    Static --> Browser
-    Auth --> Browser
-    Proxy --> Functions
-    Profile <--> CosmosDB
-    Rubric <--> CosmosDB
-    Roles <--> CosmosDB
-    Evaluate <--> CosmosDB
-    Bayes <--> CosmosDB
+    Browser  -->|HTTPS request| SWA
+    Static   -.->|serve assets| Browser
+    Auth     -.->|OAuth redirect| Browser
+    Proxy    -->|forward| Functions
+    Profile  <-->|read / write| CosmosDB
+    Rubric   <-->|read / write| CosmosDB
+    Roles    <-->|read / write| CosmosDB
+    Evaluate <-->|read / write| CosmosDB
+    Bayes    <-->|read / write| CosmosDB
+
+    classDef client   fill:#1f2937,stroke:#6b7280,color:#f9fafb
+    classDef hosting  fill:#1e40af,stroke:#1d4ed8,color:#dbeafe
+    classDef compute  fill:#5b21b6,stroke:#6d28d9,color:#ede9fe
+    classDef storage  fill:#065f46,stroke:#047857,color:#d1fae5
+
+    class Browser client
+    class Static,Auth,Proxy hosting
+    class Profile,Rubric,Roles,Fetch,Evaluate,Bayes compute
+    class CosmosDB storage
 ```
 
 ---
