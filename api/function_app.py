@@ -628,13 +628,8 @@ def post_role(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         entities = get_entities_container()
-        entities.execute_item_batch(
-            batch_operations=[
-                ("create", role_doc, {}),
-                ("create", app_doc,  {}),
-            ],
-            partition_key=user_id,
-        )
+        entities.create_item(body=role_doc)
+        entities.create_item(body=app_doc)
         return func.HttpResponse(
             json.dumps({**role_doc, **app_doc, "id": role_id}),
             status_code=201,
