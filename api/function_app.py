@@ -571,14 +571,16 @@ def get_roles(req: func.HttpRequest) -> func.HttpResponse:
     user_id = get_user_id(req) or "local-dev-user"
     try:
         entities = get_entities_container()
-        query = (
-            "SELECT TOP 500 * FROM c "
-            "WHERE c.userId = @userId AND c.type IN ('role', 'application') "
-            "ORDER BY c.createdAt DESC"
-        )
-        params = [{"name": "@userId", "value": user_id}]
-        items  = list(entities.query_items(query=query, parameters=params))
-        joined = _join_roles_and_apps(items)
+        params   = [{"name": "@userId", "value": user_id}]
+        roles = list(entities.query_items(
+            query="SELECT TOP 500 * FROM c WHERE c.userId = @userId AND c.type = 'role' ORDER BY c.createdAt DESC",
+            parameters=params,
+        ))
+        apps = list(entities.query_items(
+            query="SELECT * FROM c WHERE c.userId = @userId AND c.type = 'application'",
+            parameters=params,
+        ))
+        joined = _join_roles_and_apps(roles + apps)
         return func.HttpResponse(
             json.dumps(joined),
             status_code=200,
