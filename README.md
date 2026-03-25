@@ -13,10 +13,12 @@
 
 ## Features
 
-- **Personalized rubric** — generate a custom scoring rubric from your profile: target role, location, skills, compensation expectations, career goals, and preferred work arrangement
+- **Personalised rubric** — generate a custom scoring rubric from your profile: target role, location, skills, compensation expectations, career goals, and preferred work arrangement
 - **Paste or fetch JDs** — submit job descriptions directly or scrape them from a URL (LinkedIn-aware)
 - **AI scoring** — per-section breakdown with knock-out detection; each dimension is scored and reasoned over by GPT
-- **Pipeline queue** — sort and filter evaluations by verdict badge: Strong Pass → Strong Fail
+- **Pipeline management** — sort and filter evaluations by verdict badge, interest level, or application status
+- **Interest & status tracking** — mark interest levels and track application workflow with full history timelines
+- **Bayesian learning** — section weights rebalance automatically based on which roles you pursue
 - **Dark/light theme** — responsive layout with iPhone safe-area support
 - **Per-user isolation** — GitHub OAuth via Azure Static Web Apps; every user's data is partitioned in Cosmos DB
 
@@ -35,21 +37,25 @@ flowchart TD
     end
 
     subgraph Functions["Python Azure Functions"]
-        Profile["Profile CRUD\n+ Rubric Generation (OpenAI)"]
-        Queue["Job Queue CRUD"]
+        Profile["Profile + Preferences"]
+        Rubric["Rubric Generation\n(OpenAI, async)"]
+        Roles["Roles + Applications CRUD"]
         Fetch["JD Fetch + Scrape\n(BeautifulSoup4 + httpx)"]
-        Evaluate["Evaluate JD vs Rubric\n(OpenAI)"]
+        Evaluate["Evaluate JD vs Rubric\n(OpenAI, async)"]
+        Bayes["Bayesian Weight Update"]
     end
 
-    CosmosDB[("Azure Cosmos DB\n(NoSQL)\nper-user partition")]
+    CosmosDB[("Azure Cosmos DB (NoSQL)\nprofiles · entities\nper-user partition")]
 
     Browser -- HTTPS --> SWA
     Static --> Browser
     Auth --> Browser
     Proxy --> Functions
     Profile <--> CosmosDB
-    Queue <--> CosmosDB
+    Rubric <--> CosmosDB
+    Roles <--> CosmosDB
     Evaluate <--> CosmosDB
+    Bayes <--> CosmosDB
 ```
 
 ---
@@ -65,6 +71,30 @@ flowchart TD
 | Auth       | GitHub OAuth via Azure Static Web Apps         |
 | Hosting    | Azure Static Web Apps                          |
 | CI/CD      | GitHub Actions                                 |
+
+---
+
+## Data Model
+
+Two Cosmos containers, both partitioned by `/userId`:
+
+| Container  | Document types | id pattern |
+|------------|---------------|------------|
+| `profiles` | Profile       | `<userId>` |
+| `profiles` | Preferences   | `prefs-<userId>` |
+| `entities` | Rubric        | `rubric-<userId>` |
+| `entities` | Role          | `<uuid>` |
+| `entities` | Application   | `app-<uuid>` |
+
+**Profile** — identity and preferences (role title, location, skills, compensation range, etc.)
+
+**Preferences** — learned Bayes weights derived from interest/status history; written only by the bayes-update endpoint
+
+**Rubric** — AI-generated scoring rubric (5 fixed sections, personalised items); has its own generation lifecycle (`status: generating | done | error`)
+
+**Role** — the job opportunity and AI evaluation output (JD text, scores, reasoning, knock-out flags); immutable after `evalStatus = evaluated`
+
+**Application** — mutable user state layered on a role (interest level + history, pipeline status + history, notes)
 
 ---
 
@@ -87,27 +117,38 @@ sequenceDiagram
     API->>DB: Save profile
 
     User->>SPA: Generate rubric
-    SPA->>API: POST /api/profile/generate-rubric
+    SPA->>API: POST /api/rubric/generate
     API-->>SPA: 202 Accepted (async)
+    API->>DB: Save rubric {status: generating}
     loop Poll until ready
-        SPA->>API: GET /api/profile
+        SPA->>API: GET /api/rubric
         API-->>SPA: rubric status
     end
     API->>AI: Generate rubric prompt
     AI-->>API: Rubric JSON
-    API->>DB: Save rubric
+    API->>DB: Save rubric {status: done}
 
     User->>SPA: Paste / fetch JD
     SPA->>API: POST /api/fetch-jd (optional)
     API-->>SPA: Extracted JD text
+    SPA->>API: POST /api/roles
+    API->>DB: Create Role + Application
     SPA->>API: POST /api/evaluate
+    API-->>SPA: 202 Accepted (async)
     API->>AI: Evaluate JD vs rubric
     AI-->>API: Scored result
-    API->>DB: Save to queue
+    API->>DB: Patch role {evalStatus: evaluated}
+    loop Poll until ready
+        SPA->>API: GET /api/roles/{id}
+        API-->>SPA: joined role + application
+    end
 
-    SPA->>API: GET /api/queue
-    API-->>SPA: Queue with verdicts
     SPA->>User: Pipeline table + detail drawer
+
+    User->>SPA: Mark interest
+    SPA->>API: PATCH /api/applications/{roleId}
+    SPA->>API: POST /api/preferences/bayes-update
+    API->>DB: Update preferences
 ```
 
 ---
@@ -117,20 +158,21 @@ sequenceDiagram
 ```
 job-role-evaluator/
 ├── index.html                   # Single-page app shell
-├── app.js                       # All frontend logic (SPA, 1 000+ lines)
+├── app.js                       # All frontend logic (~1 500 lines)
 ├── styles.css                   # Design tokens, dark/light themes, responsive layout
 ├── serve.py                     # Local Flask dev server (proxies /api/* to Functions)
 ├── staticwebapp.config.json     # SWA routing, auth rules, cache headers
-├── content.json                 # Static copy/label content
+├── content.json                 # Default rubric content (reference only)
 │
 └── api/                         # Azure Functions backend
-    ├── function_app.py          # All route handlers (11 endpoints)
+    ├── function_app.py          # All route handlers (14 endpoints)
+    ├── migrate_v2.py            # One-time migration script (v1 → v2 data model)
     ├── requirements.txt         # Python dependencies
     ├── host.json                # Functions runtime config
-    ├── local.settings.json      # Local env vars (never commit secrets)
+    ├── local.settings.json      # Local env vars (never commit — contains secrets)
     ├── shared/
     │   ├── auth.py              # Extract user ID from SWA principal header
-    │   └── db.py                # Cosmos DB client helper
+    │   └── db.py                # Cosmos DB client + per-entity helpers
     └── prompts/
         ├── evaluate.yaml        # System + user prompts for JD evaluation
         └── generate_rubric.yaml # System + user prompts for rubric generation
@@ -203,19 +245,45 @@ job-role-evaluator/
 
 ## API Reference
 
-| Method   | Path                          | Description                                              |
-|----------|-------------------------------|----------------------------------------------------------|
-| `GET`    | `/api/queue`                  | Fetch user's evaluation queue (up to 500, sorted by date)|
-| `POST`   | `/api/queue`                  | Create a new evaluation entry                            |
-| `PATCH`  | `/api/queue/{id}`             | Partially update an evaluation entry                     |
-| `DELETE` | `/api/queue/{id}`             | Delete a single evaluation entry                         |
-| `DELETE` | `/api/queue`                  | Delete all evaluations for the current user              |
-| `GET`    | `/api/profile`                | Get user profile and rubric                              |
-| `PUT`    | `/api/profile`                | Save or update user profile                              |
-| `PUT`    | `/api/profile/rubric`         | Save a manually edited rubric                            |
-| `POST`   | `/api/profile/generate-rubric`| Kick off async rubric generation (returns 202)           |
-| `POST`   | `/api/fetch-jd`               | Scrape a job description from a URL                      |
-| `POST`   | `/api/evaluate`               | Evaluate a JD against the user's rubric                  |
+### Profile
+
+| Method  | Path           | Description                                                        |
+|---------|----------------|--------------------------------------------------------------------|
+| `GET`   | `/api/profile` | Fetch profile; includes merged Bayes weights from Preferences      |
+| `PUT`   | `/api/profile` | Save or update profile fields (rubric/Bayes fields rejected)       |
+
+### Rubric
+
+| Method  | Path                   | Description                                          |
+|---------|------------------------|------------------------------------------------------|
+| `GET`   | `/api/rubric`          | Fetch rubric document (includes generation status)   |
+| `PUT`   | `/api/rubric`          | Save a manually edited rubric                        |
+| `POST`  | `/api/rubric/generate` | Kick off async rubric generation (returns 202)       |
+
+### Roles
+
+| Method   | Path              | Description                                                         |
+|----------|-------------------|---------------------------------------------------------------------|
+| `GET`    | `/api/roles`      | Fetch all roles (up to 500, sorted by date); returns joined objects |
+| `POST`   | `/api/roles`      | Create a new Role + Application atomically                          |
+| `GET`    | `/api/roles/{id}` | Fetch a single role (joined with its application)                   |
+| `PATCH`  | `/api/roles/{id}` | Update eval lifecycle fields only (`evalStatus`)                    |
+| `DELETE` | `/api/roles/{id}` | Delete a role and its application                                   |
+| `DELETE` | `/api/roles`      | Delete all roles and applications for the current user              |
+
+### Applications
+
+| Method  | Path                          | Description                                              |
+|---------|-------------------------------|----------------------------------------------------------|
+| `PATCH` | `/api/applications/{roleId}`  | Update user-facing fields: interest, status, notes       |
+
+### Misc
+
+| Method  | Path                              | Description                                            |
+|---------|-----------------------------------|--------------------------------------------------------|
+| `POST`  | `/api/fetch-jd`                   | Scrape a job description from a URL                    |
+| `POST`  | `/api/evaluate`                   | Evaluate a JD against the rubric (returns 202)         |
+| `POST`  | `/api/preferences/bayes-update`   | Recompute section weights from interest/status history |
 
 All endpoints read the authenticated user identity from the `x-ms-client-principal` header injected by Azure Static Web Apps. In local development the user ID defaults to `local-dev-user`.
 
