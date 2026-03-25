@@ -173,15 +173,10 @@ def migrate_queue():
         role_doc["type"] = "role"
 
         try:
-            entities_dst.execute_item_batch(
-                batch_operations=[
-                    ("upsert", role_doc, {}),
-                    ("upsert", app_doc,  {}),
-                ],
-                partition_key=user_id,
-            )
+            entities_dst.upsert_item(role_doc)
             roles_written += 1
-            apps_written  += 1
+            entities_dst.upsert_item(app_doc)
+            apps_written += 1
         except Exception as e:
             print(f"  ERROR migrating queue item {role_id}: {e}")
             errors += 1
