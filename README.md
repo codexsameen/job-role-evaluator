@@ -28,24 +28,24 @@
 
 ```mermaid
 flowchart TD
-    Browser["Browser\n(Vanilla JS SPA)"]
+    Browser["Browser (Vanilla JS SPA)"]
 
     subgraph SWA["Azure Static Web Apps"]
-        Static["Static Assets\nindex.html · app.js · styles.css"]
-        Auth["GitHub OAuth\n/.auth/login/github"]
-        Proxy["API Proxy\n/api/*"]
+        Static["Static Assets: index.html / app.js / styles.css"]
+        Auth["GitHub OAuth: /.auth/login/github"]
+        Proxy["API Proxy: /api/*"]
     end
 
     subgraph Functions["Python Azure Functions"]
         Profile["Profile + Preferences"]
-        Rubric["Rubric Generation\n(OpenAI, async)"]
+        Rubric["Rubric Generation (OpenAI, async)"]
         Roles["Roles + Applications CRUD"]
-        Fetch["JD Fetch + Scrape\n(BeautifulSoup4 + httpx)"]
-        Evaluate["Evaluate JD vs Rubric\n(OpenAI, async)"]
+        Fetch["JD Fetch + Scrape (BeautifulSoup4 + httpx)"]
+        Evaluate["Evaluate JD vs Rubric (OpenAI, async)"]
         Bayes["Bayesian Weight Update"]
     end
 
-    CosmosDB[("Azure Cosmos DB (NoSQL)\nprofiles · entities\nper-user partition")]
+    CosmosDB[("Azure Cosmos DB NoSQL: profiles + entities")]
 
     Browser -- HTTPS --> SWA
     Static --> Browser
